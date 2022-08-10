@@ -50,7 +50,7 @@ No memory should be allocated below that address, to avoid clashes with the stac
 
 **Support of concurrency**
 
-The runtime executes in serial, the pararelism is acomplished through a network of parallel running chains (Parachains). It is primarily because creating a semantic for deterministic parallel executing is really difficult in general.
+The runtime executes in serial, the parallelism is accomplished through a network of parallel running chains (Parachains). It is primarily because creating a semantic for deterministic parallel executing is really difficult in general.
 
 ### Technical challenges
 
@@ -61,7 +61,7 @@ The runtime executes in serial, the pararelism is acomplished through a network 
 * The `reflect` package is not fully supported by TinyGo [1](https://github.com/tinygo-org/tinygo/pull/2640). The core primitives and SCALE serialization logic that we intended to reuse from [gossamer](https://github.com/ChainSafe/gossamer) all rely on the `reflect` package.
 
 **External memory allocator**
-* According to the Polkadot specification, the Wasm module does not include a memory allocator, it imports memory from the Host and relys on Host imported functions for all heap allocations (ext_allocator_malloc/ext_allocator_free). TinyGo implements simple GC and manages its memory by itself, contrary to specification. So it can't work directly on systems where the host wants to manage the memory. It used to have an `extalloc` external memory allocator, but has been rather complicated and buggy [1](https://github.com/golang/go/issues/13761).
+* According to the Polkadot specification, the Wasm module does not include a memory allocator, it imports memory from the Host and relies on Host imported functions for all heap allocations (ext_allocator_malloc/ext_allocator_free). TinyGo implements simple GC and manages its memory by itself, contrary to specification. So it can't work directly on systems where the host wants to manage the memory. It used to have an `extalloc` external memory allocator, but has been rather complicated and buggy [1](https://github.com/golang/go/issues/13761).
 
 **Linker globals**
 * The runtime is expected to expose `__heap_base` global [1](https://github.com/tinygo-org/tinygo/issues/2045), but TinyGo doesn't support that out of the box.
@@ -183,27 +183,27 @@ The runtime is written from scratch, optimized for size instead of speed and re-
 * Goroutines scheduler
 * Channels
 * Time handling (every chip has a clock)
-* Hashmap implementation (optimized for size insetad of speed)
+* Hashmap implementation (optimized for size instead of speed)
 * Runtime functions like maps, slice append, defer, ... (various things that are not implemented in the compiler)
 * Operations on strings
-* sync & reflect package (strongly connected to the runtime)
+* `sync` & `reflect` package (strongly connected to the runtime)
 
 *Basic features*
 
-All basic types, slices, all regular control flow including switch, closures and bound methods are supported, defer keyword is almost entirely supported, with the exception of deferring some builtin functions, interfaces are quite stable and should work well in almost all cases. Type switches and type asserts are also supported, as well as calling methods on interfaces. The only exception is comparing two interface values.)
+All basic types, slices, all regular control flow including switch, closures and bound methods are supported, `defer` keyword is almost entirely supported, with the exception of deferring some builtin functions, interfaces are quite stable and should work well in almost all cases. Type switches and type asserts are also supported, as well as calling methods on interfaces. The only exception is comparing two interface values.
 Maps are usable but not complete. You can use any type as a value, but only some types are acceptable as map keys (strings, integers, pointers, and structs/arrays that contain only these types). Also, they have not been optimized for performance and will cause linear lookup times in some cases.
 
 *Memory Management*
 
 Heap with a garbage collector. While not directly a language feature, garbage collection is important for most Go programs to make sure their memory usage stays in reasonable bounds.
 
-Garbage collection is currently supported on all platforms, although it works best on 32-bit chips. A simple conservative mark-sweep collector is used that will trigger a collection cycle when the heap runs out (that is fixed at compile time) or when requested manually using runtime.GC(). Some other collector designs are used for other targets, TinyGo will automatically pick a good GC for a given target.
+Garbage collection is currently supported on all platforms, although it works best on 32-bit chips. A simple conservative mark-sweep collector is used that will trigger a collection cycle when the heap runs out (that is fixed at compile time) or when requested manually using `runtime.GC()`. Some other collector designs are used for other targets, TinyGo will automatically pick a good GC for a given target.
 
-Careful design may avoid memory allocations in main loops. You may want to compile with -print-allocs=. to find out where allocations happen and why they happen.
+Careful design may avoid memory allocations in main loops. You may want to compile with `-print-allocs=.` to find out where allocations happen and why they happen.
 
 *Concurrency*
 
-Goroutines and channels works for the most part, for platforms such as WebAssembly the support is a bit more limited (calling a blocking function may for example allocate heap memory).
+Goroutines and channels work for the most part, for platforms such as WebAssembly the support is a bit more limited (calling a blocking function may for example allocate heap memory).
 
 *Parallelism*
 
@@ -211,7 +211,7 @@ Single core only.
 
 *Packages*
 
-Only partial support of the reflect package (most common types like numbers, strings, and structs are supported). Standard library relies on reflection.
+Only partial support of the `reflect` package (most common types like numbers, strings, and structs are supported). Standard library relies on reflection.
 Many features of Cgo are still unsupported (#cgo statements are only partially supported).
 
 ---
@@ -225,7 +225,7 @@ It will be best to implement a solution similar to TinyGo (compiler + runtime + 
 2. Frontend-compiler should be mostly the same as in TinyGo.
 3. Remove everything related to micro devices, only the Wasm related stuff.
 4. Runtime does not need to be super size-optimized.
-5. Implement custom GC that can work with external memory allocators (extalloc) via FFI.
+5. Implement custom GC that can work with external memory allocators (`extalloc`) via FFI.
 6. Implement the export of `__data_end`, `__heap_base` globals.
 7. Remove exported allocation functions in TinyGo.
 8. Guide used to test the PoC.
