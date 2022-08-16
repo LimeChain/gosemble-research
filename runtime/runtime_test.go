@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/ChainSafe/gossamer/lib/trie"
@@ -10,11 +9,12 @@ import (
 )
 
 func Test_Core_version(t *testing.T) {
-	rt := helpers.NewTestInstanceWithTrie(t, &trie.Trie{})
+	tt := trie.NewEmptyTrie()
+	rt := helpers.NewTestInstanceWithTrie(t, tt)
 
-	res, err := rt.Exec("Core_version", []byte{})
-
-	fmt.Println(res)
+	res, err := rt.Exec("Core_version", []byte{'W', 'a', 's', 'm'})
+	t.Log(res)
+	t.Log(tt)
 
 	require.NoError(t, err)
 }

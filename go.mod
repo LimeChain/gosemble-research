@@ -6,11 +6,13 @@ require (
 	github.com/ChainSafe/log15 v1.0.0
 	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/stretchr/testify v1.7.0
-	github.com/tetratelabs/wazero v0.0.0-20220705062338-bd1f742cb208
 	github.com/wasmerio/go-ext-wasm v0.3.2-0.20200326095750-0a32be6068ec
 )
 
-require github.com/ChainSafe/gossamer v0.6.0
+require (
+	github.com/ChainSafe/gossamer v0.6.0
+	github.com/wasmerio/wasmer-go v1.0.4
+)
 
 require (
 	github.com/ChainSafe/chaindb v0.1.5-0.20210117220933-15e75f27268f // indirect

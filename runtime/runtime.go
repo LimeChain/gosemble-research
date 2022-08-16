@@ -1,5 +1,5 @@
 /*
-	Compatibile with WebAssembly 1.0.
+	Targets WebAssembly MVP
 */
 package main
 

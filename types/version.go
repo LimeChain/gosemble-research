@@ -1,6 +1,6 @@
 package types
 
-import "github.com/ChainSafe/gossamer/lib/scale"
+import "github.com/radkomih/gosemble/scale"
 
 type ApiItem struct {
 	Name    [8]byte
