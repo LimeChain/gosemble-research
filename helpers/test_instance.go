@@ -17,7 +17,7 @@ import (
 	"github.com/ChainSafe/log15"
 )
 
-const WASM_RUNTIME = "../build/substrate_runtime.wasm"
+const WASM_RUNTIME = "../build/dev_runtime.wasm"
 
 type TransactionState struct {
 	mock.Mock

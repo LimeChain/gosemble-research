@@ -1,83 +1,90 @@
 package dev
 
-/*
-#include <stdint.h>
-
-uint32_t ext_allocator_malloc_version_1(uint32_t size);
-void ext_allocator_free_version_1(uint32_t ptr);
-*/
+// #include <stdlib.h>
+//
+// extern int32_t ext_allocator_malloc_version_1(void *context, int32_t a);
+// extern void ext_allocator_free_version_1(void *context, int32_t a);
+//
 import "C"
 
 import (
+	"errors"
 	"fmt"
-	"path/filepath"
 	"unsafe"
 
-	"github.com/radkomih/gosemble/utils"
 	"github.com/wasmerio/go-ext-wasm/wasmer"
 )
 
-//export ext_allocator_malloc_version_1
-func ext_allocator_malloc_version_1(size uint32) uint32 { return 0 }
+func Run(wasmRuntimeFile string) {
+	wasmBytes, err := ReadBytes(wasmRuntimeFile)
+	Check(err)
 
-//export ext_allocator_free_version_1
-func ext_allocator_free_version_1(ptr uint32) {}
-
-func RunInWazmer(wasmRuntimeFile string) {
-	modulePath, err := filepath.Abs(wasmRuntimeFile)
-	check(err)
-
-	bytes, err := wasmer.ReadBytes(modulePath)
-	check(err)
-
-	// Compile bytes into wasm binary
-	module, err := wasmer.Compile(bytes)
-	check(err)
-
-	// Get current wasi version and corresponded import objects
-	wasiVersion := wasmer.WasiGetVersion(module)
-	if wasiVersion == 0 {
-		// wasiVersion is unknow, use Latest instead
-		wasiVersion = wasmer.Latest
+	if len(wasmBytes) == 0 {
+		Check(errors.New("code is empty"))
 	}
 
-	// Instantiate WebAssembly module using derived import objects.
-	// importObject := wasmer.NewDefaultWasiImportObjectForVersion(wasiVersion)
-	importObject := wasmer.NewDefaultWasiImportObject()
-
-	// Allocate memory from the host (the Wasm module expects to import 20 pages)
-	memory, err := wasmer.NewMemory(2, 10)
-	check(err)
+	// Compile bytes into Wasm binary
+	module, err := wasmer.Compile(wasmBytes)
+	Check(err)
 
 	// Import host provided memory and functions into the Wasm module
 	imports := wasmer.NewImports()
-	imports.Namespace("env").AppendMemory("memory", memory)
-	imports.Namespace("env").AppendFunction("ext_allocator_malloc_version_1", ext_allocator_malloc_version_1, unsafe.Pointer(C.ext_allocator_malloc_version_1))
-	imports.Namespace("env").AppendFunction("ext_allocator_free_version_1", ext_allocator_free_version_1, unsafe.Pointer(C.ext_allocator_free_version_1))
-	importObject.Extend(*imports)
 
-	// Instantiate new module
-	instance, err := module.InstantiateWithImportObject(importObject)
-	check(err)
+	// Host provided functions
+	for _, toRegister := range []struct {
+		importName     string
+		implementation interface{}
+		cgoPointer     unsafe.Pointer
+	}{
+		{"ext_allocator_malloc_version_1", ext_allocator_malloc_version_1, C.ext_allocator_malloc_version_1},
+		{"ext_allocator_free_version_1", ext_allocator_free_version_1, C.ext_allocator_free_version_1},
+	} {
+		_, err = imports.Namespace("env").AppendFunction(toRegister.importName, toRegister.implementation, toRegister.cgoPointer)
+		Check(err)
+	}
+
+	// Host provided memory (the Wasm module expects to import 20 pages)
+	memory, err := wasmer.NewMemory(20, 0)
+	Check(err)
+	imports.Namespace("env").AppendMemory("memory", memory)
+
+	// Instantiate new WebAssembly module using derived import objects.
+	importObject := wasmer.NewDefaultWasiImportObject()
+	importObject.Extend(*imports)
 	defer importObject.Close()
+	instance, err := module.InstantiateWithImportObject(importObject) // instance, err := wasmer.NewInstanceWithImports(wasmBytes, imports)
+	Check(err)
 	defer instance.Close()
+
+	if !instance.HasMemory() {
+		instance.Memory = memory
+	}
+
+	allocator := NewAllocator(instance.Memory, DefaultHeapBase)
+	_ = allocator
 
 	mem := memory.Data()
 
-	// Write some data into memory from the host
-	data := []byte("Go to Wasm")
-	dataPtr := int32(0)
-	dataSize := int32(len(data))
-	for i := int32(0); i < dataSize; i++ {
-		mem[i+dataPtr] = data[i]
-	}
-	fmt.Printf("%s\n", mem[dataPtr:dataSize+dataPtr])
+	// Write some data into the shared memory (from the host)
+	data := []byte("HostData")
 
-	// Call an exported function from the Wasm module
-	// by passing a ptr and size to the datas
+	// TODO fix 0 offset
+	dataOffset := int32(1)
+	dataSize := int32(len(data))
+	copy(mem[dataOffset:dataOffset+int32(len(data))], data)
+
+	fmt.Printf("%s\n", mem[dataOffset:dataOffset+dataSize])
+
+	// Call an exported function from the Wasm module by
+	// passing an offset and size to the allocated data
 	coreVersion := instance.Exports["Core_version"]
-	result, err := coreVersion(dataPtr, dataSize)
-	check(err)
-	_, resultSize := utils.Int64ToPointerAndSize(uint64(result.ToI64()))
-	fmt.Printf("%s\n", mem[dataPtr:resultSize])
+	// TODO check/fix panic with 0 offset
+	result, err := coreVersion(dataOffset, dataSize)
+	Check(err)
+
+	fmt.Println(result)
+
+	// Wasm function overwrites the "HostData" with "RuntimeData"
+	// offset, size := utils.Int64ToPointerAndSize(uint64(result.ToI64()))
+	fmt.Printf("%s\n", mem[dataOffset:dataOffset+dataSize])
 }
