@@ -35,11 +35,11 @@ No memory should be allocated below that address, to avoid clashes with the stac
 |      ____________________________________________________|_________________________     |
 |     | WASM                                               | (imported)              |    |
 |     |                                                    |                         |    |
-|     |             ______________________________________\|/______________________  |    |
+|     |             _______________________________________v_______________________  |    |
 |     | (imported) |          |                  |                                 | |    |
 |  MEMORY  ----->  | Data     |         <- Stack | Heap ->                         | |    |
 |     |            |__________|__________________|_________________________________| |    |
-|     |            0     __data_end         __heap_base         /|\      max memory  |    |
+|     |            0     __data_end         __heap_base          ^       max memory  |    |
 |     |                                                          |                   |    |
 |     |                                                          GC                  |    |
 |     |______________________________________________________________________________|    |
@@ -221,15 +221,24 @@ Many features of Cgo are still unsupported (#cgo statements are only partially s
 TinyGo design decisions are based on optimizations around small embedded devices, which might not be always suitable or required in Wasm. Also, it will be difficult to support custom and non-standard APIs (import memory + export linker-specific globals) in the long run, the TinyGo core contributors are a bit against supporting things that are not standardized as is the case with Polkadot Wasm's custom API.
 It will be best to implement a solution similar to TinyGo (compiler + runtime + external memory allocator) only targeting Wasm.
 
-1. Use TinyGo as a starting point setup + Docker.
-2. Frontend-compiler should be mostly the same as in TinyGo.
-3. Remove everything related to micro devices, only the Wasm related stuff.
-4. Runtime does not need to be super size-optimized.
-5. Implement custom GC that can work with external memory allocators (`extalloc`) via FFI.
-6. Implement the export of `__data_end`, `__heap_base` globals.
-7. Remove exported allocation functions in TinyGo.
-8. Guide used to test the PoC.
+1. Fork TinyGo.
+2. Add separate Dockerfile and build script for building TinyGo with prebuild LLVM (for faster builds).
+3. Add new target similar to Rust's wasm32-unknown-unknown with no dependecy on JS/WASI.
+4. Add a new directive `polkawasm` to separate the new target from the existing WASM/WASI functionality.
+5. Add `__heap_base` global export.
+6. Remove any JS/WASI and allocations exports.
+7. Add LLVM memory import.
+8. Implement custom GC that can work with external memory allocators (`extalloc`) via FFI.
 
 *Hacks*
 * Hardcode the same value for `__heap_base` inside the host and the runtime module.
 * Inside the Wasm module, the GC could just allocate a large amount of memory and work with that.
+
+## Guide for testing
+
+1. Utilise `TinyGo` to compile the `Go` implementation of Polkadot's runtime logic as Wasm module.
+2. Setup dev environment `/dev`.
+* [x] Setup host runtime environment to execute the compiled Wasm module inside.
+* [x] Import the host provided functions used inside the Wasm module (fix the errors).
+* [x] Read/write from/to the host/Wasm's shared memory (only tested with module exported memory).
+* [ ] Import the host provided memory inside the Wasm module.
