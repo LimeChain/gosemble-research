@@ -16,7 +16,7 @@ func main() {
 
 	// HostData -> RuntimeD
 
-	res, err := in.Exec("Core_version", []byte{'H', 'o', 's', 't', 'D', 'a', 't', 'a'})
+	res, err := in.Exec("Core_version", []byte{})
 	dev.Check(err)
 	fmt.Printf("%q\n", res)
 }
