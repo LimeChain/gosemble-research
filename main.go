@@ -12,8 +12,8 @@ func main() {
 	in, err := dev.NewInstance(wasmBytes, dev.Config{})
 	dev.Check(err)
 
-	res, err := in.Exec("Core_version", []byte{'H', 'o', 's', 't', 'D', 'a', 't', 'a'})
+	res, err := in.Exec("Core_version", []byte{})
 	dev.Check(err)
 
-	fmt.Printf("\n%q\n", res)
+	fmt.Printf("%q\n", res)
 }

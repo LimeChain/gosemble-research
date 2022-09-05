@@ -24,7 +24,7 @@ run:
 	@go run main.go
 
 test:
-	@go test -v runtime/runtime_test.go
+	@go test -v runtime/runtime*
 
 inspect:
 	@wasmer inspect build/dev_runtime.wasm

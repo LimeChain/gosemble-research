@@ -1,7 +1,7 @@
 package main
 
 // "//export" on a func is actually an import in TinyGo.
-// The function needs to be referenced somewhere to be actualy exported.
+// The function needs to be referenced somewhere to be actually exported.
 
 //go:wasm-module env
 //export ext_allocator_malloc_version_1

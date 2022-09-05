@@ -5,16 +5,23 @@ import (
 
 	"github.com/ChainSafe/gossamer/lib/trie"
 	"github.com/radkomih/gosemble/helpers"
-	"github.com/stretchr/testify/require"
+	"github.com/radkomih/gosemble/types"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_Core_version(t *testing.T) {
 	tt := trie.NewEmptyTrie()
 	rt := helpers.NewTestInstanceWithTrie(t, tt)
 
-	res, err := rt.Exec("Core_version", []byte{'W', 'a', 's', 'm'})
+	res, err := rt.Exec("Core_version", []byte{})
 	t.Log(res)
 	t.Log(tt)
 
-	require.NoError(t, err)
+	assert.Nil(t, err)
+
+	resultVersion := types.VersionData{}
+	err = resultVersion.Decode(res)
+
+	assert.Nil(t, err)
+	assert.Equal(t, VersionData, resultVersion)
 }
