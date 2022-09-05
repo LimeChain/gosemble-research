@@ -10,6 +10,8 @@ import (
 )
 
 func Test_Core_version(t *testing.T) {
+	// TODO add host provided storage functions
+
 	tt := trie.NewEmptyTrie()
 	rt := helpers.NewTestInstanceWithTrie(t, tt)
 
@@ -23,5 +25,5 @@ func Test_Core_version(t *testing.T) {
 	err = resultVersion.Decode(res)
 
 	assert.Nil(t, err)
-	assert.Equal(t, VersionData, resultVersion)
+	assert.Equal(t, versionDataConfig, resultVersion)
 }

@@ -48,12 +48,12 @@ func StringToOffsetAndSize(str string) int64 {
 // 	}))
 // }
 
-func OffsetAndSizeToMemorySlice(offset int32, size int32) []byte {
+func ToWasmMemorySlice(offset int32, size int32) []byte {
 	return unsafe.Slice((*byte)(unsafe.Pointer(uintptr(offset))), uintptr(size))
 }
 
 func WriteToMemory(offset int32, size int32, data [256]byte) {
-	memory := OffsetAndSizeToMemorySlice(offset, size)
+	memory := ToWasmMemorySlice(offset, size)
 
 	for i := int32(0); i < size; i++ {
 		memory[i] = byte(data[i])

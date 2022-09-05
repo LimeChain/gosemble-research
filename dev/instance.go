@@ -25,7 +25,7 @@ type Instance struct {
 }
 
 type Context struct {
-	// Storage         Storage
+	Storage   Storage
 	Allocator *FreeingBumpHeapAllocator
 	// Keystore  *keystore.GlobalKeystore
 	// Validator bool
@@ -48,6 +48,30 @@ type Config struct {
 	// Transaction runtime.TransactionState
 	// CodeHash common.Hash
 	// testVersion *runtime.Version
+}
+
+// Storage interface
+type Storage interface {
+	Set(key []byte, value []byte)
+	Get(key []byte) []byte
+	// Root() (common.Hash, error)
+	// SetChild(keyToChild []byte, child *trie.Trie) error
+	// SetChildStorage(keyToChild, key, value []byte) error
+	// GetChildStorage(keyToChild, key []byte) ([]byte, error)
+	// Delete(key []byte)
+	// DeleteChild(keyToChild []byte)
+	// DeleteChildLimit(keyToChild []byte, limit *[]byte) (uint32, bool, error)
+	// ClearChildStorage(keyToChild, key []byte) error
+	// NextKey([]byte) []byte
+	// ClearPrefixInChild(keyToChild, prefix []byte) error
+	// GetChildNextKey(keyToChild, key []byte) ([]byte, error)
+	// GetChild(keyToChild []byte) (*trie.Trie, error)
+	// ClearPrefix(prefix []byte)
+	// ClearPrefixLimit(prefix []byte, limit uint32) (uint32, bool)
+	// BeginStorageTransaction()
+	// CommitStorageTransaction()
+	// RollbackStorageTransaction()
+	// LoadCode() []byte
 }
 
 func setupVM(code []byte) (instance wasmer.Instance, allocator *FreeingBumpHeapAllocator, err error) {
@@ -182,7 +206,7 @@ func (in *Instance) Exec(function string, data []byte) (result []byte, err error
 	outputPtr, outputLength := utils.Int64ToOffsetAndSize(wasmValue.ToI64())
 	memory = in.vm.Memory.Data() // call Data() again to get larger slice
 
-	fmt.Printf("%s", memory)
-	fmt.Printf("\n\nptr-size: %v, bytes: %0x \n", wasmValue, memory[outputPtr:outputPtr+outputLength])
+	// fmt.Printf("%s", memory)
+	// fmt.Printf("\n\nptr-size: %v, bytes: %0x \n", wasmValue, memory[outputPtr:outputPtr+outputLength])
 	return memory[outputPtr : outputPtr+outputLength], nil
 }
