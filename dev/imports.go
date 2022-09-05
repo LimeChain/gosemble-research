@@ -16,7 +16,7 @@ import (
 
 //export ext_allocator_malloc_version_1
 func ext_allocator_malloc_version_1(context unsafe.Pointer, size C.int32_t) C.int32_t {
-	fmt.Printf("executing with size %d...", int64(size))
+	// fmt.Printf("executing malloc with size %d...", int64(size))
 
 	instanceContext := wasmer.IntoInstanceContext(context)
 	ctx := instanceContext.Data().(*Context)
@@ -33,7 +33,7 @@ func ext_allocator_malloc_version_1(context unsafe.Pointer, size C.int32_t) C.in
 
 //export ext_allocator_free_version_1
 func ext_allocator_free_version_1(context unsafe.Pointer, addr C.int32_t) {
-	fmt.Printf("executing...")
+	// fmt.Printf("executing free...")
 
 	instanceContext := wasmer.IntoInstanceContext(context)
 	runtimeCtx := instanceContext.Data().(*Context)

@@ -4,13 +4,40 @@ import (
 	"unsafe"
 )
 
-func BytesToPointerAndSize(data []byte) int64 {
-	dataPtr := uintptr(unsafe.Pointer(&data))
-	dataLen := len(data)
-	return PointerAndSizeToInt64(int32(dataPtr), int32(dataLen))
+var alivePointers = map[uintptr]interface{}{}
+
+func retain(data []byte) {
+	ptr := &data[0]
+	unsafePtr := uintptr(unsafe.Pointer(ptr))
+	alivePointers[unsafePtr] = data
 }
 
-// func PointerAndSizeToString(ptr uint32, size uint32) string {
+func Int64ToOffsetAndSize(offsetAndSize int64) (offset int32, size int32) {
+	return int32(offsetAndSize), int32(offsetAndSize >> 32)
+}
+
+func OffsetAndSizeToInt64(offset int32, size int32) int64 {
+	return int64(offset) | (int64(size) << 32)
+}
+
+func SliceToOffset(data []byte) uintptr {
+	return uintptr(unsafe.Pointer(&data[0]))
+}
+
+func BytesToOffsetAndSize(data []byte) int64 {
+	offset := SliceToOffset(data)
+	size := len(data)
+	return OffsetAndSizeToInt64(int32(offset), int32(size))
+}
+
+func StringToOffsetAndSize(str string) int64 {
+	data := []byte(str)
+	offset := SliceToOffset(data)
+	size := len(data)
+	return OffsetAndSizeToInt64(int32(offset), int32(size))
+}
+
+// func PointerAndSizeToString(ptr int32, size int32) string {
 // 	// We use SliceHeader, not StringHeader as it allows us to fix the capacity to what was allocated.
 // 	// Tinygo requires these as uintptrs even if they are int fields.
 // 	// https://github.com/tinygo-org/tinygo/issues/1284
@@ -21,36 +48,15 @@ func BytesToPointerAndSize(data []byte) int64 {
 // 	}))
 // }
 
-// func StringToPointerAndSize(s string) (uint32, uint32) {
-// 	buf := []byte(s)
-// 	ptr := &buf[0]
-// 	unsafePtr := uintptr(unsafe.Pointer(ptr))
-// 	return uint32(unsafePtr), uint32(len(buf))
-// }
-
-func Int64ToPointerAndSize(pointerAndSize int64) (dataPtr int32, dataLen int32) {
-	return int32(pointerAndSize), int32(pointerAndSize >> 32)
+func OffsetAndSizeToMemorySlice(offset int32, size int32) []byte {
+	return unsafe.Slice((*byte)(unsafe.Pointer(uintptr(offset))), uintptr(size))
 }
 
-func PointerAndSizeToInt64(dataPtr int32, dataLen int32) int64 {
-	return int64(dataPtr) | (int64(dataLen) << 32)
-}
-
-func WriteMemory(offset int32, size int32, data [11]byte) {
-	bs := unsafe.Slice((*byte)(unsafe.Pointer(uintptr(offset))), uintptr(size))
+func WriteToMemory(offset int32, size int32, data [256]byte) {
+	memory := OffsetAndSizeToMemorySlice(offset, size)
 
 	for i := int32(0); i < size; i++ {
-		limit := int32(0)
-		if int32(len(data)) > size {
-			limit = size
-		} else {
-			limit = int32(len(data))
-		}
-		if i >= limit {
-			break
-		}
-
-		bs[i] = byte(data[i])
+		memory[i] = byte(data[i])
 
 		// ptr := (*byte)(unsafe.Pointer(uintptr(offset) + uintptr(i)))
 		// *ptr = byte(data[i])

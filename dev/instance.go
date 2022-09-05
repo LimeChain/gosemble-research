@@ -162,6 +162,13 @@ func (in *Instance) Exec(function string, data []byte) (result []byte, err error
 	memory := in.vm.Memory.Data()
 	copy(memory[inputPtr:inputPtr+dataLength], data)
 
+	// TODO: remove it, only for testing
+	_startFunc, ok := in.vm.Exports["_start"]
+	if !ok {
+		return nil, fmt.Errorf("running runtime _start function: %w", ok)
+	}
+	_startFunc()
+
 	runtimeFunc, ok := in.vm.Exports[function]
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", ErrExportFunctionNotFound, function)
@@ -172,7 +179,10 @@ func (in *Instance) Exec(function string, data []byte) (result []byte, err error
 		return nil, fmt.Errorf("running runtime function: %w", err)
 	}
 
-	outputPtr, outputLength := utils.Int64ToPointerAndSize(wasmValue.ToI64())
+	outputPtr, outputLength := utils.Int64ToOffsetAndSize(wasmValue.ToI64())
 	memory = in.vm.Memory.Data() // call Data() again to get larger slice
+
+	fmt.Printf("%s", memory)
+	fmt.Printf("\n\nptr-size: %v, bytes: %0x \n", wasmValue, memory[outputPtr:outputPtr+outputLength])
 	return memory[outputPtr : outputPtr+outputLength], nil
 }

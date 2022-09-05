@@ -14,7 +14,7 @@ import (
 // see more details at https://github.com/paritytech/substrate/issues/1615
 
 // DefaultHeapBase is the default heap base value (offset) used when the runtime does not provide one
-const DefaultHeapBase = uint32(1469576)
+const DefaultHeapBase = uint32(131072)
 
 // The pointers need to be aligned to 8 bytes
 const alignment uint32 = 8
@@ -182,7 +182,6 @@ func (fbha *FreeingBumpHeapAllocator) setHeap(ptr uint32, value uint8) {
 func (fbha *FreeingBumpHeapAllocator) setHeap4bytes(ptr uint32, value []byte) {
 	copy(fbha.heap.Data()[fbha.ptrOffset+ptr:fbha.ptrOffset+ptr+4], value)
 }
-
 func (fbha *FreeingBumpHeapAllocator) getHeap4bytes(ptr uint32) []byte {
 	return fbha.heap.Data()[fbha.ptrOffset+ptr : fbha.ptrOffset+ptr+4]
 }

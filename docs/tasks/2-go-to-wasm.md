@@ -10,19 +10,20 @@ Questions we are gonna try to answer:
 * Which compiler toolchain is best suited in the case of producing Wasm with GC runtime - LLVM or Binaryen?
 * How Go and TinyGo internals work and differ from each other - compiler, runtime, GC?
 * What are the challenges of implementing a Substrate Runtime with GC managed language like Go?
-* What are the steps required to start implementing new compiler/runtime with GC and external allocator?
+* What are the steps required to implement new compiler + runtime with GC and external allocator as a PoC?
+* Any future improvements?
 
 
 ## Substrate design decisions
 
 **WebAssembly specification**
 
-The Wasm runtime module targets [WebAssembly MVP](https://github.com/WebAssembly/design/blob/main/MVP.md) without any extensions enabled and domain-specific API.
-* [x] module exports API functions (the business logic).
-* [x] module imports Host provided functions (`ext_allocator_free/ext_allocator_malloc`).
-* [ ] module imports Host provided memory.
-* [ ] module exports linker specific globals (`__heap_base`, `__data_end`).
-* [ ] module exports `__indirect_function_table` (it is WIP and not enabled currently).
+The Wasm runtime module targets [WebAssembly MVP](https://github.com/WebAssembly/design/blob/main/MVP.md) without any extensions enabled. The module's domain-specific API consists of:
+* exported API functions (the business logic).
+* imported Host provided functions (`ext_allocator_free/ext_allocator_malloc`).
+* imported Host provided memory.
+* exported linker specific globals (`__heap_base`, `__data_end`).
+* exported `__indirect_function_table` (WIP and not enabled currently).
 
 ```
 Type: wasm
@@ -515,27 +516,34 @@ Single core only.
 
 ## Proof of concept (alternative compiler + runtime)
 
-TinyGo design decisions are based on optimizations around small embedded devices, which might not always be suitable or required in Wasm. Also, it will be difficult to support custom and non-standard APIs in the long run, the TinyGo core contributors are a bit against supporting things that are not standardized as is the case with Polkadot Wasm's Runtime specification.
+TinyGo design decisions are based on optimizations around small embedded devices, which might not always be suitable or required in Wasm. Also aimed to support the most recent Wasm spec features. Also, it will be difficult to support custom and non-standard APIs in the long run, the TinyGo core contributors are a bit against supporting things that are not standardized as is the case with Polkadot Wasm's Runtime specification.
 It will be best to implement a solution similar to TinyGo (compiler + runtime + GC with external memory allocator) only targeting Wasm. The frontend-compiler should be mostly the same as in TinyGo and the runtime might not need to be super size-optimized.
 
 **Add Toolchain support for Substrate's Wasm**
 1. [x] Fork [TinyGo](https://github.com/radkomih/tinygo).
-2. [x] Add build script and separate Dockerfile for building TinyGo with prebuild LLVM (for faster builds).
-3. Add new target similar to Rust's `wasm32-unknown-unknown`.
-  * [x] add a new directive `polkawasm` to separate the new target from the existing WASM/WASI functionality.
-  * [x] remove the `_start` export.
-  * [x] remove any JS/WASI exports.
-  * [x] remove the memory allocation exports.
-  * [x] remove any bulk memory operations and other features that are not part of the Wasm MVP spec. 
-  * [x] add compiler flag for exporting `__heap_base`, `__data_end` globals.
-  * [x] add compiler flag for declaring the memory as imported.
-  * [x] add custom GC implementation that can work with external memory allocator.
-  * [x] override the allocation functions used in the GC with such provided by the host.
-  * [ ] need better abstractions since the runtime implementation depeneds on third party API that might change in the future.
+2. [x] Add separate Dockerfile and build script for building TinyGo with prebuild LLVM (for faster builds).
+3. Add new target similar to Rust's `wasm32-unknown-unknown`, but aimed to support Substrate/Wasm MVP.
+  * [x] add new target `polkawasm.json` in `targets/`
+  * [x] add new `polkawasm` implementation in `runtime_polkawasm.go`
+  * [x] use the `polkawasm` directive to separate the new target from the existing Wasm/WASI functionality.
+  * [x] use linker flag to declare memory as imported.
+  * [x] use linker flags to export `__heap_base`, `__data_end` globals.
+  * [x] use linker flags to export `__indirect_function_table`.
+  * [x] change the stack placement not to start from the beginning of the linear memory.
+  * [x] disable the the scheduler to remove the support of goroutines and channels (JS/WASI exports).
+  * [x] remove the unsupported features by Wasm MVP (bulk memory operations, lang. ext). 
+  * [x] add implementation of `memmove`, `memset`, `memcpy`
+  * [x] increase the memory size to 20 pages
 
+  * [ ] add GC implementation that can work with external memory allocator (remove memory allocation exports).
+  * [ ] override the allocation functions used in the GC with such provided by the host.
+  * [ ] need better abstractions since the runtime implementation depeneds on third party API that might change in the future.
+  * [ ] remove the `_start` export or make it available at runtime.
+
+  
 **Build Wasm Runtime**
 
-1. [ ] Implement the SCALE codec without reflection.
+1. [ ] Implement SCALE codec without reflection.
 2. Implement the minimal Runtime API (core API).
   * [ ] `Core_version`
   * [ ] `Core_execute_block`
@@ -544,18 +552,20 @@ It will be best to implement a solution similar to TinyGo (compiler + runtime + 
 
 **Setup Wasm Host**
 
-1. [x] Setup host runtime environment to execute the compiled Wasm module inside (targeting MVP).
-2. [x] Import the host provided functions used inside the Wasm module.
-3. [x] Import the host provided memory inside the Wasm module.
-4. [x] Read/write from/to the host/Wasm's shared memory.
-5. [x] Add implementation of bump allocator.
+1. Setup host runtime environment to execute the compiled Wasm module inside (targeting MVP).
+  * [x] Import the host provided functions used inside the Wasm module.
+  * [x] Import the host provided memory inside the Wasm module.
+  * [x] Add implementation of bump allocator.
+  * [x] Read/write from/to the host/Wasm's shared memory.
 
 * [ ] fix the error when passing 0 offset to a Wasm function.
 * [ ] in the extracted vm helper, some struct fields are undefined
 
-6. Add tests for correctness and performance.
+2. Add tests for correctness and performance.
 
 
 ## Testing guide
+
+
 
 

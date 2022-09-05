@@ -85,6 +85,6 @@ func Run(wasmRuntimeFile string) {
 	fmt.Println(result)
 
 	// Wasm function overwrites the "HostData" with "RuntimeData"
-	// offset, size := utils.Int64ToPointerAndSize(uint64(result.ToI64()))
+	// offset, size := utils.Int64ToOffsetAndSize(uint64(result.ToI64()))
 	fmt.Printf("%s\n", mem[dataOffset:dataOffset+dataSize])
 }

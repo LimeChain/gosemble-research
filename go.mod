@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/ChainSafe/log15 v1.0.0
-	github.com/google/go-cmp v0.5.8
+	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/wasmerio/go-ext-wasm v0.3.2-0.20200326095750-0a32be6068ec
 )
