@@ -30,10 +30,6 @@ var versionDataConfig = types.VersionData{
 	StateVersion:       uint32(STATE_VERSION),
 }
 
-//go:wasm-module env
-//export ext_storage_set_version_1
-func ext_storage_set_version_1(key int64, value int64)
-
 /*
 	SCALE encoded arguments () allocated in the Wasm VM memory, passed as:
 	dataPtr - i32 pointer to the memory location.
@@ -73,7 +69,6 @@ func CoreInitializeBlock(dataPtr int32, dataLen int32) {
 	ext_storage_set_version_1(int64(123), int64(456))
 }
 
-// TODO:
-// Remove the _start export and find a way to call it from the runtime to initialize the memory
+// TODO: remove the _start export and find a way to call it from the runtime to initialize the memory.
 // TinyGo requires to have a main function to compile to Wasm.
 func main() {}

@@ -8,6 +8,10 @@ type Header struct {
 	Digest         Digest
 }
 
+func (v *Header) Encode() ([]byte, error) {
+	return []byte{}, nil
+}
+
 func (v *Header) Decode(enc []byte) error {
 	return nil
 }
