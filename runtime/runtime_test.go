@@ -14,7 +14,7 @@ import (
 const WASM_RUNTIME = "../build/runtime.wasm"
 
 func Test_CoreVersion(t *testing.T) {
-	rt := wasmer.NewTestInstanceWithTrieLocal(t, WASM_RUNTIME, trie.NewEmptyTrie())
+	rt := wasmer.NewLocalTestInstanceWithTrie(t, WASM_RUNTIME, trie.NewEmptyTrie())
 	res, err := rt.Exec("Core_version", []byte{})
 	assert.Nil(t, err)
 
@@ -26,7 +26,7 @@ func Test_CoreVersion(t *testing.T) {
 }
 
 func Test_CoreInitializeBlock(t *testing.T) {
-	rt := wasmer.NewTestInstanceWithTrieLocal(t, WASM_RUNTIME, trie.NewEmptyTrie())
+	rt := wasmer.NewLocalTestInstanceWithTrie(t, WASM_RUNTIME, trie.NewEmptyTrie())
 
 	scaleEncHeader, err := (&types.Header{}).Encode()
 	assert.Nil(t, err)
