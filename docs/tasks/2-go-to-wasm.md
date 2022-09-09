@@ -116,20 +116,19 @@ The Runtime executes in serial, the parallelism is accomplished through a networ
 * fast execution
 * compact
 * portable
-
 * Little-endian byte order when translating between values and bytes.
-* Linear memory, a contiguous, byte-addressable, linear address space, spanning from offset 0 and extending up to a varying memory size. Can be resized, but it can only be grown. (`grow_memory`, `memory.grow`)
+* Linear memory, a contiguous, byte-addressable, linear address space, spanning from offset 0 and extending up to a varying memory size. Can be resized, but only grown (`grow_memory`, `memory.grow`).
 * Single specially-designated default linear memory which is the linear memory accessed by all the memory operators.
 * Linear memory cannot be shared between threads of execution. 
 
 **Limitations**
 
 Linear memories (default or otherwise) can either be imported or defined inside the module. After import or definition, there is no difference when accessing a linear memory whether it was imported or defined internally.
-In the MVP, linear memory cannot be shared between threads of execution. The addition of threads 🦄 will allow this.
+In the MVP, linear memory cannot be shared between threads of execution. The addition of threads will allow this.
 
 **Proposals**
 * Allow setting protection and creating mappings within the contiguous linear memory.
-* In the MVP, there are only default linear memories but new memory operators 🦄 may be added after the MVP which can also access non-default memories.
+* In the MVP, there are only default linear memories but new memory operators may be added after the MVP which can also access non-default memories.
 * WebAssembly/gc proposal most likely won't help [1](https://github.com/WebAssembly/gc/issues/59).
 * there is no WebAssembly specification for exports and runtime behavior around allocation.
 
@@ -237,44 +236,6 @@ Allocator
 * allocate new blocks with the correct size
 * deals with fragmentation (merge smaller block to allow allocation of larger ones)
 
-
-
-```
-                                         BLOCK OF MEMORY
- ____________________________________________________________________________________________
-|    HEADER (x bits)   |          PAYLOAD          |     PADDING      |    FOOTER (x bits)   |
-|                      |                           |                  |                      |
-|                      |       (if allocated)      |    (optional)    |                      |
-| block size | 0 0 0/1 |                           |                  | block size | 0 0 0/1 |
-|______________________|___________________________|__________________|______________________|
-                       ▲
-                       |
-                      ptr
-
-(x = 0:free | 1:allocated)
-
-Double linked-list of free objects using the block header/footer.
- ______________________________________________________________
-|________|________|________|________|________|________|________|
-  64 bits  64 bits  64 bits  64 bits  64 bits  64 bits  64 bits (aligned by 8 bytes)
-
-
-Bump Allocator (needs Garbage Collector to reclaim memory)
- _______________________________________________________________
-|        |                    |        |                        |
-| Object |        Free        | Object |          Free          |
-|________|____________________|________|________________________|
-                                       ▲
-
-Free List Allocator
- _______________________________________________________________
-|        |                    |        |                        |
-| Object |        Free        | Object |          Free          |
-|________|____________________|________|________________________|
-                    |                  ▲            ▲
-                    |_______________________________|
-```
-
 Garbage Collector
 * tracking memory allocations in heap memory
 * releasing allocations that are no longer needed
@@ -319,85 +280,6 @@ Compiler decides (via escape analysis) when a value should be allocated on the H
 * when the value could be referenced after the function that constructed it returns
 * if the value is too large to fit on the stack
 * when the compiler doesn't know the size of the value at compile time
-
-
-RSS MEMORY (stack + heap + globals)
-
-```
-			GOROUTINE (main)           GOROUTINE (1)
-					 |                         |
-					 |                         |
-					 ▼                         ▼
-				 STACK                     STACK (1)
- ______________________
-|                      |
-|                      |
-|                      |
-|                      |
-|   	main (FRAME)     |
-|  __________________  |
-| |                  | |
-| |                  | |
-| |                  | |
-| |  newObj (FRAME)  | |
-| |  ______________  | |
-| | |              | | |
-| | |              | | |
-| | |              | | |
-| | |              | | |
-| | |              | | |
-| | |              | | |
-| | |              | | |
-| | |______________| | |
-| |                  | |
-| |         o        | |
-| |_________|________| |
-|___________|__________|
-						|
- 	    ______| 				   HEAP
-     |
-  ___|_________________________________________________
- |   |                                                 |
- |   ▼                                                 |
- |  obj [--------]                                     |
- |                                                     |
- |                                                     |
- |_____________________________________________________|
-start                                                 end
-
-push main
-push o
-push newObj
---► obj heap
-pop newObj
-pop main
-
---------------------------------------------
-
-In-Memory Representation of Go Types
-
-byte (uint8)
-rune (int32)
-bool (int8)
-int
-float
-complex
-
-string
-
-array
-struct
-
-slice
-
-map
-
-channel
-pointer
-function
-
-interfaces
-```
 
 **Concurrency**
 
@@ -540,8 +422,10 @@ The frontend-compiler should be mostly the same as in TinyGo and the runtime mig
   * [x] use the conservative GC as a starting point (there is a chance for memory corruption)
   * [x] add GC implementation that can work with external memory allocator (remove memory allocation exports).
   * [x] override the allocation functions used in the GC with such provided by the host.
-  * [ ] better abstractions since the runtime implementation depeneds on third party API that might change in the future.
-  * [ ] remove the `_start` export and find a way to call it from the runtime.
+  * [x] remove the exported allocation functions
+
+  * [ ] the `_start` export func should be called somewhere to init the heap (the host does not support that).
+  * [ ] better abstractions, the extalloc GC depends on third party allocation API that might change in the future.
 
 **Setup Host**
 1. [x] Fork Gossamer and add it as a submodule.
@@ -549,7 +433,7 @@ The frontend-compiler should be mostly the same as in TinyGo and the runtime mig
 3. [x] Setup test instance to run the compiled Wasm (target MVP, import host provided functions and memory, implement bump allocator).
 
 **Implement Wasm Runtime**
-1. [x] Implement SCALE codec without reflection and basic types.
+1. [x] Implement SCALE codec without reflection.
 2. Implement the minimal Runtime API (core API) and tests for correctness and performance.
   * [x] `Core_version`
   * [ ] `Core_execute_block`
@@ -582,7 +466,7 @@ git submodule update --init --recursive
 
 ### Build the Runtime
 
-Using a [forked version of TinyGo](https://github.com/radkomih/tinygo/tree/polka-wasm-runtime), we build the Runtime with target `wasm32-unknown-unknown`, exported in `build/runtime.wasm`.
+Using a [forked version of TinyGo](https://github.com/radkomih/tinygo/tree/polka-wasm-runtime), we build the Runtime with target `polkawasm`, exported in `build/runtime.wasm`.
 
 ```bash
 make build
@@ -618,6 +502,33 @@ cat build/runtime.wat
 
 ## Future improvements
 
-* [ ] more work on the GC.
-* [ ] use separate heap region reserved for the GC allocations and another reserved for the allocator (by offseting the `__heap_base`).
-inside the Wasm module, the GC could just allocate a large amount of memory and work with that.
+1. [ ] write performance tests.
+2. [ ] complete the SCALE codec implementation.
+3. [ ] extalloc GC might need more work.
+4. [ ] fix errors outputed in the Wasm memory
+
+  SCALE codec
+  * [ ] fix: `panic("Assertion error: n>4 needed to compact-encode uint64")`
+  * [ ] fix: `Could not write " + strconv.Itoa(len(bytes)) + " bytes to writer`
+
+  TinyGo + conservative GC
+  * [ ] `runtimePanic("out of memory")`
+  * [ ] `runtimePanic("nil pointer dereference")`
+  * [ ] `runtimePanic("slice out of range")`
+  * [ ] `runtimePanic("index out of range")`
+
+  TinyGo + extalloc GC
+  * [ ] `return "reflect: call of reflect.Type." + e.Method + " on invalid type"`
+  * [ ] `return "reflect: call of " + e.Method + " on zero Value"`
+
+  Gossamer instance freezez with Wasm compiled with extalloc GC when testing Core_version and executing instance.version()
+
+  **Substrate implementation of Core_version**
+  "\x10node8substrate-node\n\x00\x00\x00\x04\x01\x00\x00\x00\x00\x00\x000\xdfj\xcbh\x99\a`\x9b\x03\x00\x00\x007\xe3\x97\xfc|\x91\xf5\xe4\x01\x00\x00\x00@\xfe:\xd4\x01\xf8\x95\x9a\x04\x00\x00\x00Ҽ\x98\x97\xeeЏ\x15\x02\x00\x00\x00\xf7\x8b'\x8b\xe5?EL\x02\x00\x00\x00\xed\x99Ŭ\xb2^\xed\xf5\x02\x00\x00\x00\xcb\xca%\xe3\x9f\x14#\x87\x02\x00\x00\x00hz\xd4J\xd3\u007f\x03\xc2\x01\x00\x00\x00\xbc\x9d\x89\x90O[\x92?\x01\x00\x00\x00h\xb6k\xa1\"\xc9?\xa7\x01\x00\x00\x007Ȼ\x13P\xa9\xa2\xa8\x01\x00\x00\x00\xab<\x05r)\x1f\xeb\x8b\x01\x00\x00\x00\x01\x00\x00\x00"
+
+  **Gosemble conservative GC implementation of Core_version**
+  "\x10node8substrate-node\n\x00\x00\x00\x04\x01\x00\x00\x00\x00\x00\x00\f\x00\x00\x00 \xdfj\xcbh\x99\a`\x9b\x03\x00\x00\x00 7\xe3\x97\xfc|\x91\xf5\xe4\x01\x00\x00\x00 @\xfe:\xd4\x01\xf8\x95\x9a\x04\x00\x00\x00 Ҽ\x98\x97\xeeЏ\x15\x02\x00\x00\x00 \xf7\x8b'\x8b\xe5?EL\x02\x00\x00\x00 \xed\x99Ŭ\xb2^\xed\xf5\x02\x00\x00\x00 \xcb\xca%\xe3\x9f\x14#\x87\x02\x00\x00\x00 hz\xd4J\xd3\u007f\x03\xc2\x01\x00\x00\x00 \xbc\x9d\x89\x90O[\x92?\x01\x00\x00\x00 h\xb6k\xa1\"\xc9?\xa7\x01\x00\x00\x00 7Ȼ\x13P\xa9\xa2\xa8\x01\x00\x00\x00 \xab<\x05r)\x1f\xeb\x8b\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00"
+
+  **Gosemble extalloc GC implementation of Core_version**
+  "\x10node8substrate-node\n\x00\x00\x00\x04\x01\x00\x00\x00\x00\x00\x00\f\x00\x00\x00 \xdfj\xcbh\x99\a`\x9b\x03\x00\x00\x00 7\xe3\x97\xfc|\x91\xf5\xe4\x01\x00\x00\x00 @\xfe:\xd4\x01\xf8\x95\x9a\x04\x00\x00\x00 Ҽ\x98\x97\xeeЏ\x15\x02\x00\x00\x00 \xf7\x8b'\x8b\xe5?EL\x02\x00\x00\x00 \xed\x99Ŭ\xb2^\xed\xf5\x02\x00\x00\x00 \xcb\xca%\xe3\x9f\x14#\x87\x02\x00\x00\x00 hz\xd4J\xd3\u007f\x03\xc2\x01\x00\x00\x00 \xbc\x9d\x89\x90O[\x92?\x01\x00\x00\x00 h\xb6k\xa1\"\xc9?\xa7\x01\x00\x00\x00 7Ȼ\x13P\xa9\xa2\xa8\x01\x00\x00\x00 \xab<\x05r)\x1f\xeb\x8b\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00"
+
