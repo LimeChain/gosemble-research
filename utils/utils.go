@@ -6,10 +6,16 @@ import (
 
 var alivePointers = map[uintptr]interface{}{}
 
-func retain(data []byte) {
+func Retain(data []byte) {
 	ptr := &data[0]
 	unsafePtr := uintptr(unsafe.Pointer(ptr))
 	alivePointers[unsafePtr] = data
+}
+
+func PanicOnError(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
 
 func Int64ToOffsetAndSize(offsetAndSize int64) (offset int32, size int32) {

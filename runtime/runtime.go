@@ -19,9 +19,7 @@ import (
 //export Core_version
 func CoreVersion(dataPtr int32, dataLen int32) int64 {
 	scaleEncVersion, err := constants.VersionDataConfig.Encode()
-	if err != nil {
-		panic(err)
-	}
+	utils.PanicOnError(err)
 	// TODO: retain the pointer to the scaleEncVersion
 	return utils.BytesToOffsetAndSize(scaleEncVersion)
 }

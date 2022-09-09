@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/radkomih/gosemble/constants"
 	"testing"
+
+	"github.com/radkomih/gosemble/constants"
 
 	"github.com/ChainSafe/gossamer/lib/runtime/wasmer"
 	"github.com/ChainSafe/gossamer/lib/trie"
@@ -12,7 +13,7 @@ import (
 
 const WASM_RUNTIME = "../build/runtime.wasm"
 
-func Test_Core_version(t *testing.T) {
+func Test_CoreVersion(t *testing.T) {
 	rt := wasmer.NewTestInstanceWithTrieLocal(t, WASM_RUNTIME, trie.NewEmptyTrie())
 	res, err := rt.Exec("Core_version", []byte{})
 	assert.Nil(t, err)
@@ -20,11 +21,11 @@ func Test_Core_version(t *testing.T) {
 	resultVersion := types.VersionData{}
 	err = resultVersion.Decode(res)
 	assert.Nil(t, err)
-
+	t.Logf("%q", res)
 	assert.Equal(t, constants.VersionDataConfig, resultVersion)
 }
 
-func Test_Core_initialize_block(t *testing.T) {
+func Test_CoreInitializeBlock(t *testing.T) {
 	rt := wasmer.NewTestInstanceWithTrieLocal(t, WASM_RUNTIME, trie.NewEmptyTrie())
 
 	scaleEncHeader, err := (&types.Header{}).Encode()
@@ -32,6 +33,5 @@ func Test_Core_initialize_block(t *testing.T) {
 
 	res, err := rt.Exec("Core_initialize_block", scaleEncHeader)
 	assert.Nil(t, err)
-
 	t.Logf("%q", res)
 }
