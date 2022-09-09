@@ -18,4 +18,4 @@ build:
 	-c "tinygo build -target=polkawasm -o=/src/examples/wasm/gosemble/build/runtime.wasm /src/examples/wasm/gosemble/runtime/"
 
 test:
-	@go test -v runtime/runtime*
+	@go test -v runtime/runtime_test.go

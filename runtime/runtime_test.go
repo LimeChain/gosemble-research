@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/radkomih/gosemble/constants"
 	"testing"
 
 	"github.com/ChainSafe/gossamer/lib/runtime/wasmer"
@@ -20,7 +21,7 @@ func Test_Core_version(t *testing.T) {
 	err = resultVersion.Decode(res)
 	assert.Nil(t, err)
 
-	assert.Equal(t, versionDataConfig, resultVersion)
+	assert.Equal(t, constants.VersionDataConfig, resultVersion)
 }
 
 func Test_Core_initialize_block(t *testing.T) {

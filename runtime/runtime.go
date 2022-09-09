@@ -4,31 +4,11 @@ Targets WebAssembly MVP
 package main
 
 import (
+	"github.com/radkomih/gosemble/constants"
 	"github.com/radkomih/gosemble/types"
 
 	"github.com/radkomih/gosemble/utils"
 )
-
-const SPEC_NAME = "gosemble"
-const IMPL_NAME = "go"
-const AUTHORING_VERSION = 1
-const SPEC_VERSION = 2
-const IMPL_VERSION = 3
-const TRANSACTION_VERSION = 4
-const STATE_VERSION = 5
-
-var versionDataConfig = types.VersionData{
-	SpecName:         []byte(SPEC_NAME),
-	ImplName:         []byte(IMPL_NAME),
-	AuthoringVersion: uint32(AUTHORING_VERSION),
-	SpecVersion:      uint32(SPEC_VERSION),
-	ImplVersion:      uint32(IMPL_VERSION),
-	Apis: []types.ApiItem{
-		{Name: [8]byte{1, 1, 1, 1, 1, 1, 1, 1}, Version: 0},
-	},
-	TransactionVersion: uint32(TRANSACTION_VERSION),
-	StateVersion:       uint32(STATE_VERSION),
-}
 
 /*
 	SCALE encoded arguments () allocated in the Wasm VM memory, passed as:
@@ -38,9 +18,9 @@ var versionDataConfig = types.VersionData{
 */
 //export Core_version
 func CoreVersion(dataPtr int32, dataLen int32) int64 {
-	scaleEncVersion, err := versionDataConfig.Encode()
+	scaleEncVersion, err := constants.VersionDataConfig.Encode()
 	if err != nil {
-		// TODO: handle or log
+		panic(err)
 	}
 	// TODO: retain the pointer to the scaleEncVersion
 	return utils.BytesToOffsetAndSize(scaleEncVersion)
