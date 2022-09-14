@@ -3,10 +3,9 @@ package main
 import (
 	"testing"
 
-	"github.com/radkomih/gosemble/constants"
-
 	"github.com/ChainSafe/gossamer/lib/runtime/wasmer"
 	"github.com/ChainSafe/gossamer/lib/trie"
+	"github.com/radkomih/gosemble/constants"
 	"github.com/radkomih/gosemble/types"
 	"github.com/stretchr/testify/assert"
 )
