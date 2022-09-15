@@ -21,7 +21,7 @@ func Test_CoreVersion(t *testing.T) {
 	err = resultVersion.Decode(res)
 	assert.Nil(t, err)
 	t.Logf("%q", res)
-	assert.Equal(t, constants.VersionDataConfig, resultVersion)
+	assert.Equal(t, constants.RuntimeVersion, resultVersion)
 }
 
 func Test_CoreInitializeBlock(t *testing.T) {

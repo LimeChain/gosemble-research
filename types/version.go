@@ -2,10 +2,11 @@ package types
 
 import (
 	"bytes"
+
 	"github.com/radkomih/gosemble/scale"
 )
 
-type ApiItem struct {
+type APIItem struct {
 	Name    [8]byte
 	Version uint32
 }
@@ -16,7 +17,7 @@ type VersionData struct {
 	AuthoringVersion   uint32
 	SpecVersion        uint32
 	ImplVersion        uint32
-	Apis               []ApiItem
+	APIs               []APIItem
 	TransactionVersion uint32
 	StateVersion       uint32
 }
@@ -30,9 +31,9 @@ func (v *VersionData) Encode() ([]byte, error) {
 	encoder.EncodeUint32(v.AuthoringVersion)
 	encoder.EncodeUint32(v.SpecVersion)
 	encoder.EncodeUint32(v.ImplVersion)
-	encoder.EncodeUint32(uint32(len(v.Apis)))
+	encoder.EncodeUint32(uint32(len(v.APIs)))
 
-	for _, apiItem := range v.Apis {
+	for _, apiItem := range v.APIs {
 		encoder.EncodeByteSlice(apiItem.Name[:])
 		encoder.EncodeUint32(apiItem.Version)
 	}
@@ -54,15 +55,15 @@ func (v *VersionData) Decode(enc []byte) error {
 
 	apisLength := decoder.DecodeUint32()
 	if apisLength != 0 {
-		var apis []ApiItem
+		var apis []APIItem
 
 		for i := 0; i < int(apisLength); i++ {
-			apis = append(apis, ApiItem{
+			apis = append(apis, APIItem{
 				Name:    decodeApiName(decoder),
 				Version: decoder.DecodeUint32(),
 			})
 		}
-		v.Apis = apis
+		v.APIs = apis
 	}
 
 	v.TransactionVersion = decoder.DecodeUint32()

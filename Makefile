@@ -7,6 +7,7 @@ old:
 	-scheduler=none \
 	-gc=none \
 	-opt=0 \
+	-no-debug \
 	-o=build/runtime.wasm \
 	runtime/runtime.go
 
@@ -15,7 +16,7 @@ old:
 build:
 	@docker build --tag polkawasm/tinygo:0.25.0 -f tinygo/Dockerfile.polkawasm tinygo
 	@docker run --rm -v $(CURRENT_DIR):/src/examples/wasm/gosemble -w /src/examples/wasm/gosemble polkawasm/tinygo:0.25.0 /bin/bash \
-	-c "tinygo build -target=polkawasm -o=/src/examples/wasm/gosemble/build/runtime.wasm /src/examples/wasm/gosemble/runtime/"
+	-c "tinygo build -target=polkawasm -no-debug -o=/src/examples/wasm/gosemble/build/runtime.wasm /src/examples/wasm/gosemble/runtime/"
 
 test:
 	@go test -v runtime/runtime_test.go

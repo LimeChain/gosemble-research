@@ -17,7 +17,7 @@ import (
 */
 //go:export Core_version
 func CoreVersion(dataPtr int32, dataLen int32) int64 {
-	scaleEncVersion, err := constants.VersionDataConfig.Encode()
+	scaleEncVersion, err := constants.RuntimeVersion.Encode()
 	utils.PanicOnError(err)
 	// TODO: retain the pointer to the scaleEncVersion
 	// utils.Retain(scaleEncVersion)
