@@ -164,7 +164,7 @@ To support an automatic memory management, the [GC proposal](https://github.com/
 
 **Binaryen**
 * Binaryen compiles much more quickly.
-* Binaryen does general-purpose optimizations to the wasm that LLVM does not, and whole-program optimizations.
+* Binaryen does general-purpose optimizations to the wasm that LLVM does not, including whole-program optimizations.
 * Binaryen is smaller in size compared to LLVM.
 * Binaryen is a better choice for languages with GC, which intend to compile to Wasm GC. Additionally, it will support compilation from Wasm GC to Wasm MVP, as a polyfill, though the opposite will not be possible.
 * In case Polkadot's wasm target switches to Wasm GC, having Binaryen as a compiler backend will have support for that, as the developers behind it are from WebAssembly organisation.
