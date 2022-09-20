@@ -154,20 +154,19 @@ lower level, linear memory, implicit stack, instructions that operated on it
 To support an automatic memory management, the [GC proposal](https://github.com/WebAssembly/gc/blob/main/proposals/gc/Overview.md) might be handy. But the Wasm runtime supports only WebAssembly MVP currently, also the GC proposal is under development and it is not yet clear if Polkadot will be able to leverage the GC proposal. Potential problems include determinism (is there anything in GC that causes ND? Can it be tamed efficiently?) and safety (Is it possible for a host to limit the resource consumption reliably and deterministically?).
 
 
-## 2.3. Compiler backends targeting Wasm - LLVM, Binaryen, Emscripten
+## 2.3. Compiler backends targeting Wasm - LLVM, Binaryen
 
 **LLVM**
 * LLVM is much more powerful as an optimizer.
-* LLVM does not support Wasm GC, and the future there is unclear. In general, GC is not a main focus for LLVM (almost all the languages using it use linear memory, C, C++, Rust, Swift, Zig, etc.).
-* LLVM supports wasm object files, DWARF, and other things which are very useful in the non-GC world (they may also help in GC in the future, that's unclear; we'll add support to Binaryen as needed).
+* LLVM currently does not support Wasm GC, and GC is not the main focus for LLVM as most languages that utilize it use linear memory - C, C++, Rust, Zig.
+* LLVM is larger in size compared to Binaryen.
 
 **Binaryen**
 * Binaryen compiles much more quickly.
-* Binaryen is much smaller.
-* Binaryen is a good choice for languages with GC and intend to compile to Wasm GC. And we will be able to compile Wasm GC to Wasm MVP, as a polyfill until Wasm GC is everywhere, but not the opposite.
-
-**Emscripten**
-
+* Binaryen does general-purpose optimizations to the wasm that LLVM does not, and whole-program optimizations.
+* Binaryen is smaller in size compared to LLVM.
+* Binaryen is a better choice for languages with GC, which intend to compile to Wasm GC. Additionally, it will support compilation from Wasm GC to Wasm MVP, as a polyfill, until Wasm GC is everywhere, though the opposite will not be possible.
+* In case Polkadot's wasm target switches to Wasm GC, having Binaryen as a compiler backend will have support for that, as the developers behind it are from WebAssembly organisation.
 
 ## 2.4. Go
 
@@ -220,9 +219,9 @@ Process Memory Layout
 |----------------------|
 |         HEAP         | Dynamic Allocated Variables
 |----------------------|
-|         BSS          | Uninitializaed Static Variables
+|         BSS          | Uninitialized Static Variables
 |----------------------|
-|         DATA         | Initializaed Static Variables 
+|         DATA         | Initialized Static Variables
 |----------------------|
 |         TEXT         | Code
 |______________________|
@@ -262,7 +261,7 @@ Allocator
 Garbage Collector
 * tracking memory allocations in heap memory
 * releasing allocations that are no longer needed
-* keeping allocatiosn that are still in use
+* keeping allocations that are still in use
 
 * tracing garbage collector (not reference counting)
 * hybrid stop-the-world/concurrent collector (stop-the-world part limited by a 10ms deadline)
@@ -288,8 +287,8 @@ Garbage Collector
 
 3. Mark Termination (stop the world)
   * turn the write barrier off
-  * various cleaup tasks
-  * next collection goal is acalulated
+  * various cleanup tasks
+  * next collection goal is calculated
 
 *Sweeping*
 Freeing Heap Memory
@@ -297,7 +296,7 @@ Freeing Heap Memory
 * the latency of sweeping is added to the cost of performing new allocation
 
 Compiler decides (via escape analysis) when a value should be allocated on the Heap
-* sharing down (passign pointers) typically stays on the Stack
+* sharing down (passing pointers) typically stays on the Stack
 * sharing up (returning pointers) typically escapes on the Heap
 
 * when the value could be referenced after the function that constructed it returns
@@ -451,7 +450,7 @@ Taking into consideration all the technical challenges, the timeframe, and the n
 
 **Setup Polkadot Host**
 1. [x] Fork and add [gossamer](https://github.com/LimeChain/gossamer) as a submodule.
-2. [x] Make the necessary changes to run localy provided Runtime inside the Host.
+2. [x] Make the necessary changes to run locally provided Runtime inside the Host.
 3. [x] Setup test instance to run the compiled Wasm (target MVP, import host provided functions and memory, implement bump allocator).
 
 **Implement Polkadot Runtime**
@@ -467,7 +466,7 @@ Taking into consideration all the technical challenges, the timeframe, and the n
 2. [ ] complete the SCALE codec implementation.
 3. [ ] complete the reflect packages support
 4. [ ] extalloc GC might need more work.
-5. [ ] fix errors outputed in the Wasm memory.
+5. [ ] fix output errors in the Wasm memory.
 
 SCALE codec
 * [ ] fix: `panic("Assertion error: n>4 needed to compact-encode uint64")`
@@ -563,7 +562,7 @@ cat build/runtime.wat
 ## 4. Conclusion
 
 The resulting proof of concept could be used to develop Polkadot Runtimes, ...
-Current research document is usefull as starting point to provides context make further contributions to the project or to take new direction implementing alternative toolchain.
+Current research document is useful as starting point to provides context make further contributions to the project or to take new direction implementing alternative toolchain.
 
 
 ## 5. Discussion
