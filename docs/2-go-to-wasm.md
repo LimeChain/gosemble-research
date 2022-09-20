@@ -342,7 +342,7 @@ AST (with types) -> convert (golang.org/x/tools/go/ssa) -> SSA
 
 // Optimization
 
-SSA (higher level with Go-specific constructs like interfaces and *goroutines*) -> convert (tinygo) -> LLVM IR
+SSA (higher level with Go-specific constructs like interfaces and goroutines) -> convert (tinygo) -> LLVM IR
 LLVM IR -> optimize (llvm) -> LLVM IR (optimize by a mixture of handpicked LLVM optimization passes, TinyGo-specific optimizations (escape analysis, string-to-[]byte optimizations, etc.) and custom lowering.)
 
 // Backend Compiler
