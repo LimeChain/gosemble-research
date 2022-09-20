@@ -5,7 +5,7 @@
 The lack of diversity and ease of use of Polkadot Runtimes is a barrier that stops Polkadot from living up to its full promise. The Polkadot community should as a whole address this problem. 
 
 While there are several choices for implementing Polkadot Hosts, C++, Rust, and Go, the only option for writing Polkadot Runtimes is Rust. There are too many good things to say about Rust, but it is well-known that it has a steep learning curve. On the other hand, Go is a language focused on simplicity that is gaining popularity among software developers nowadays. It is modern, powerful, and fast, backed by Google and used in many of their software, thus making it an ideal candidate for implementing Polkadot Runtimes.
-Arguably, other Blockchain networks (e.g Cosmos) have gained significant adoption due to the lower barrier for entry (compared to Rust).
+Arguably, other Blockchain networks (e.g. Cosmos) have gained significant adoption due to the lower barrier for entry (compared to Rust).
 
 To be feasible to develop Polkadot Runtime in Go, there are technological challenges that need to be cleared out first. This research is aimed at those challenges.
 
@@ -37,13 +37,13 @@ In addition to the [Polkadot spec](https://github.com/w3f/polkadot-spec) here is
 
 ### 2.1.1. WebAssembly specification
 
-The Runtime Wasm module targets [WebAssembly MVP](https://github.com/WebAssembly/design/blob/main/MVP.md) without any extensions enabled, which supports a limited set of instructions compared to Webassembly 1.0.
+The Runtime Wasm module targets [WebAssembly MVP](https://github.com/WebAssembly/design/blob/main/MVP.md) without any extensions enabled, which supports a limited set of instructions compared to WebAssembly 1.0.
 It is expected to have a very domain-specific API that consists of:
-* exported API functions, the business logic (`Core_version`, `Core_execute_block`, `Core_initialize_block`, etc).
 * imported Host provided functions (`ext_allocator_malloc_version_1`, `ext_allocator_free_version_1`, etc).
 * imported Host provided memory.
 * exported linker specific globals (`__heap_base`, `__data_end`).
 * exported `__indirect_function_table` (WIP and not enabled currently).
+* exported business logic API functions (`Core_version`, `Core_execute_block`, `Core_initialize_block`, etc).
 
 ```
 Type: wasm
@@ -100,12 +100,12 @@ Polkadot is a non-browser environment, but it is not an OS. It doesn't seek to p
 
 ### 2.1.3. SCALE codec
 
-Runtime data, coming in the form of byte code, needs to be as light as possible. The SCALE codec provides the capability of efficiently encoding and decoding it. Since being built for LE architectures, it is compatible with Wasm environments.
+Runtime data, coming in the form of byte code, needs to be as light as possible. The SCALE codec provides the capability of efficiently encoding and decoding it. Since it is built for little-endian systems, it is compatible with Wasm environments.
 
 ### 2.1.4. Runtime calls
 
 Each function call into the Runtime is done with newly allocated memory (via the shared allocator), either for sharing input data or results. Arguments are SCALE encoded into a byte array and copied into this section of the Wasm shared memory. Allocations do not persist between calls. It is important to note that the Runtime uses the same Host provided allocator for all heap allocations, so the Host is in charge of the Wasm heap memory management.
-Data passing the Runtime API is always SCALE encoded, Host API call on the other hand try to avoid all encoding.
+Data passing to the Runtime API is always SCALE encoded, Host API calls on the other hand try to avoid all encoding.
 
 ### 2.1.5. Exported globals
 
@@ -117,8 +117,10 @@ Imported memory works a little bit better than exported memory since it avoids s
 
 ### 2.1.7. External memory management
 
-The design in which allocation functions are on the Host side is dictated by the fact that some of the Host functions might return buffers of data of unknown size. That means that the Wasm code cannot efficiently provide buffers upfront. For example, let's examine the Host function that returns a given storage value. The storage value's size is not known upfront in the general case, so the Wasm caller cannot pre-allocate the buffer upfront. A potential solution is to first call the Host function without a buffer, which will return the value's size, and then do the second call passing a buffer of the required size. For some Host functions, caches could be put in place for mitigation, some other functions cannot be implemented in such model at all. To solve this problem, it was chosen to place the allocator on the Host side.
-However, this is not the only possible solution, there is an ongoing discussion about moving the allocator into the Wasm: [[1]](https://github.com/paritytech/substrate/issues/11883)
+The design in which allocation functions are on the Host side is dictated by the fact that some of the Host functions might return buffers of data of unknown size. That means that the Wasm code cannot efficiently provide buffers upfront.
+
+For example, let's examine the Host function that returns a given storage value. The storage value's size is not known upfront in the general case, so the Wasm caller cannot pre-allocate the buffer upfront. A potential solution is to first call the Host function without a buffer, which will return the value's size, and then do the second call passing a buffer of the required size. For some Host functions, caches could be put in place for mitigation, some other functions cannot be implemented in such model at all. To solve this problem, it was chosen to place the allocator on the Host side.
+However, this is not the only possible solution, as there is an ongoing discussion about moving the allocator into the Wasm: [[1]](https://github.com/paritytech/substrate/issues/11883).
 Notably, the allocator maintains some of its data structures inside the linear memory and some other structures outside.
 
 ### 2.1.8. Support of concurrency
@@ -128,8 +130,7 @@ The Runtime executes in serial, the parallelism is accomplished through a networ
 
 ## 2.2. WebAssembly MVP - features, limitations, proposals
 
-**Features**
-lower level, linear memory, implicit stack, instructions that operated on it
+**Features** - lower level, linear memory, implicit stack, instructions that operated on it
 
 * compact, portable, with fast execution
 * instruction format for stack-based virtual machine (low level bytecode)
@@ -141,7 +142,7 @@ lower level, linear memory, implicit stack, instructions that operated on it
 * no standard library
 * no system call interface (providing capabilities similar to an operating system)
 * support of common I/O features vary (writing to the console)
-* forking a process, does not work
+* forking a process does not work
 * linear memory cannot be shared between threads of execution
 * does not yet support true parallelism, lacks support for multiple threads, atomics, and memory barriers
 * can't control scheduling within a function or safely modify memory in parallel (functions cannot do anything in parallel).
@@ -165,7 +166,7 @@ To support an automatic memory management, the [GC proposal](https://github.com/
 * Binaryen compiles much more quickly.
 * Binaryen does general-purpose optimizations to the wasm that LLVM does not, and whole-program optimizations.
 * Binaryen is smaller in size compared to LLVM.
-* Binaryen is a better choice for languages with GC, which intend to compile to Wasm GC. Additionally, it will support compilation from Wasm GC to Wasm MVP, as a polyfill, until Wasm GC is everywhere, though the opposite will not be possible.
+* Binaryen is a better choice for languages with GC, which intend to compile to Wasm GC. Additionally, it will support compilation from Wasm GC to Wasm MVP, as a polyfill, though the opposite will not be possible.
 * In case Polkadot's wasm target switches to Wasm GC, having Binaryen as a compiler backend will have support for that, as the developers behind it are from WebAssembly organisation.
 
 ## 2.4. Go
@@ -186,7 +187,7 @@ AST (with types) -> golang.org/x/tools/go/ssa (convert) -> SSA
 
 * variable capturing, inlining, escape analysis, closure rewriting, walk
 
-SSA (higher level with Go-specific constructs like interfaces and goroutines) -> convert (tinygo) -> LLVM IR
+SSA (higher level with Go-specific constructs like interfaces and *goroutines*) -> convert (tinygo) -> LLVM IR
 LLVM IR -> optimize (llvm) -> LLVM IR (optimize by a mixture of handpicked LLVM optimization passes, TinyGo-specific optimizations ()
 
 // Backend Compiler
@@ -230,7 +231,7 @@ Process Memory Layout
 Stack
 * managed by the compiler
 * elastic
-* one stack per goroutine
+* one stack per *goroutine*
 
 Heap
 * allocated by the memory allocator and collected by the garbage collector
@@ -276,23 +277,23 @@ Garbage Collector
 
 *Collection*
 1. Mark Setup (stop the world)
-  * turn on write barrier
-  * stop all goroutines
+    * turn on write barrier
+    * stop all goroutines
 
 2. Marking (concurrent)
-  * inspect the stack to find root pointers to the heap
-  * traverse the heap graph from those root pointers
-  * mark values on the heap that are still in use
-  * slow down allocations to speed up collection
+    * inspect the stack to find root pointers to the heap
+    * traverse the heap graph from those root pointers
+    * mark values on the heap that are still in use
+    * slow down allocations to speed up collection
 
 3. Mark Termination (stop the world)
-  * turn the write barrier off
-  * various cleanup tasks
-  * next collection goal is calculated
+    * turn the write barrier off
+    * various cleanup tasks
+    * next collection goal is calculated
 
 *Sweeping*
 Freeing Heap Memory
-* occurs when the goroutines attempt to allocate new heap memory
+* occurs when the *goroutines* attempt to allocate new heap memory
 * the latency of sweeping is added to the cost of performing new allocation
 
 Compiler decides (via escape analysis) when a value should be allocated on the Heap
@@ -305,7 +306,7 @@ Compiler decides (via escape analysis) when a value should be allocated on the H
 
 **Concurrency**
 
-The scheduler runs goroutines, pauses and resumes them on blocking channel ops. or mutex ops, coordinates blocking system calls, io, runtime GC. Goroutines are use space threads managed by the runtime.
+The scheduler runs *goroutines*, pauses and resumes them on blocking channel ops. or mutex ops, coordinates blocking system calls, io, runtime GC. *Goroutines* use space threads, managed by the runtime.
 
 **Parallelism**
 
@@ -323,7 +324,7 @@ It is a subset of Go with very different goals from the standard Go. It is an al
 
 *Non-goals*
 * Using more than one core.
-* Be efficient while using zillions of goroutines. However, good goroutine support is certainly a goal.
+* Be efficient while using zillions of *goroutines*. However, good *goroutine* support is certainly a goal.
 * Be as fast as `gc`. However, LLVM will probably be better at optimizing certain things so TinyGo might actually turn out to be faster for number crunching.
 * Be able to compile every Go program out there.
 
@@ -341,7 +342,7 @@ AST (with types) -> convert (golang.org/x/tools/go/ssa) -> SSA
 
 // Optimization
 
-SSA (higher level with Go-specific constructs like interfaces and goroutines) -> convert (tinygo) -> LLVM IR
+SSA (higher level with Go-specific constructs like interfaces and *goroutines*) -> convert (tinygo) -> LLVM IR
 LLVM IR -> optimize (llvm) -> LLVM IR (optimize by a mixture of handpicked LLVM optimization passes, TinyGo-specific optimizations (escape analysis, string-to-[]byte optimizations, etc.) and custom lowering.)
 
 // Backend Compiler
@@ -365,7 +366,7 @@ The runtime is written from scratch, optimized for size instead of speed and re-
 * Startup code (device specific runtime initialization of memory, timers)
 * GC (copied from micropython, super simple, optimized for size, runs the GC once it runs out of memory)
 * Memory Allocator
-* Goroutines scheduler
+* *Goroutines* scheduler
 * Channels
 * Time handling (every chip has a clock)
 * Hashmap implementation (optimized for size instead of speed)
@@ -390,7 +391,7 @@ Careful design may avoid memory allocations in main loops. You may want to compi
 
 **Concurrency**
 
-Goroutines and channels work for the most part, for platforms such as WebAssembly the support is a bit more limited (calling a blocking function may for example allocate heap memory).
+*Goroutines* and channels work for the most part, for platforms such as WebAssembly the support is a bit more limited (calling a blocking function may for example allocate heap memory).
 
 **Parallelism**
 
@@ -438,7 +439,7 @@ Taking into consideration all the technical challenges, the timeframe, and the n
   * [x] use linker flags to export `__heap_base`, `__data_end` globals.
   * [x] use linker flags to export `__indirect_function_table`.
   * [x] change the stack placement not to start from the beginning of the linear memory.
-  * [x] disable the the scheduler to remove the support of goroutines and channels (and JS/WASI exports).
+  * [x] disable the the scheduler to remove the support of *goroutines* and channels (and JS/WASI exports).
   * [x] remove the unsupported features by Wasm MVP (bulk memory operations, lang. ext) and add implementation of `memmove`, `memset`, `memcpy`, use the opt flag as part of the target.
   * [x] increase the memory size to 20 pages
   * [x] use the conservative GC as a starting point (there is a chance for memory corruption)
