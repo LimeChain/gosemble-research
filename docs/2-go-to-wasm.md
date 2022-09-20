@@ -118,7 +118,7 @@ Imported memory works a little bit better than exported memory since it avoids s
 ### 2.1.7. External memory management
 
 The design in which allocation functions are on the Host side is dictated by the fact that some of the Host functions might return buffers of data of unknown size. That means that the Wasm code cannot efficiently provide buffers upfront. For example, let's examine the Host function that returns a given storage value. The storage value's size is not known upfront in the general case, so the Wasm caller cannot pre-allocate the buffer upfront. A potential solution is to first call the Host function without a buffer, which will return the value's size, and then do the second call passing a buffer of the required size. For some Host functions, caches could be put in place for mitigation, some other functions cannot be implemented in such model at all. To solve this problem, it was chosen to place the allocator on the Host side.
-However, this is not the only possible solution, there is an ongoing discussion about moving the allocator into the Wasm: [1](https://github.com/paritytech/substrate/issues/11883)
+However, this is not the only possible solution, there is an ongoing discussion about moving the allocator into the Wasm: [[1]](https://github.com/paritytech/substrate/issues/11883)
 Notably, the allocator maintains some of its data structures inside the linear memory and some other structures outside.
 
 ### 2.1.8. Support of concurrency
@@ -150,7 +150,7 @@ lower level, linear memory, implicit stack, instructions that operated on it
 * allow setting protection and creating mappings within the contiguous linear memory.
 * there are only default linear memories, but new memory operators may be added after the MVP which can also access non-default memories.
 * there is no WebAssembly specification for exports and runtime behavior around allocation.
-* the GC proposal most likely won't help [1](https://github.com/WebAssembly/gc/issues/59).
+* the GC proposal most likely won't help [[1]](https://github.com/WebAssembly/gc/issues/59).
 To support an automatic memory management, the [GC proposal](https://github.com/WebAssembly/gc/blob/main/proposals/gc/Overview.md) might be handy. But the Wasm runtime supports only WebAssembly MVP currently, also the GC proposal is under development and it is not yet clear if Polkadot will be able to leverage the GC proposal. Potential problems include determinism (is there anything in GC that causes ND? Can it be tamed efficiently?) and safety (Is it possible for a host to limit the resource consumption reliably and deterministically?).
 
 
@@ -402,20 +402,20 @@ Single core only.
 TinyGo's design decisions are mostly based on optimizations around small embedded devices. Of course, this is good for the blockchain's use case too, but not always required and as crucial as is for devices with very limited resources. The necessity of rewriting a large part of Go's runtime to align with those optimizations contributes to the effort of supporting Go's capabilities. Another point where TinyGo diverges from the toolchain requirements of Polkadot is that it supports Wasm aiming at the most recent Webassembly features. Here is a detailed breakdown of most of the problematic points:
 
 **Toolchain support for Wasm for non-browser environments**
-* The official Go compiler does not support Wasm for non-browser environments [1](https://github.com/golang/go/issues/31105), only Wasm with browser-specific API. There is an alternative compiler and runtime, TinyGo which supports Wasm outside the browser, but is still not capable of producing Wasm compatible with Subsrtate's requirements.
+* The official Go compiler does not support Wasm for non-browser environments [[1]](https://github.com/golang/go/issues/31105), only Wasm with browser-specific API. There is an alternative compiler and runtime, TinyGo which supports Wasm outside the browser, but is still not capable of producing Wasm compatible with Subsrtate's requirements.
 
 **Wasm features that are not part of the MVP**
 * TinyGo makes use of some features that are not supported in the targeted Wasm MVP, such as bulk memory operations (`memory.copy`, `memory.fill` used to reduce the code size) and other extensions.
 
 **Standard library support**
-* The standard library relies on the `reflect` package (most common types like numbers, strings, and structs are supported), which is not fully supported by TinyGo [1](https://github.com/tinygo-org/tinygo/pull/2640). The core primitives and SCALE serialization logic that we intended to reuse from [gossamer](https://github.com/ChainSafe/gossamer) also rely on the `reflect` package.
+* The standard library relies on the `reflect` package (most common types like numbers, strings, and structs are supported), which is not fully supported by TinyGo [[1]](https://github.com/tinygo-org/tinygo/pull/2640). The core primitives and SCALE serialization logic that we intended to reuse from [gossamer](https://github.com/ChainSafe/gossamer) also rely on the `reflect` package.
 * Many features of Cgo are still unsupported (#cgo statements are only partially supported).
 
 **External memory allocator and GC**
 * According to the Polkadot specification, the Wasm module does not include a memory allocator. It imports memory from the Host and relies on Host imported functions for all heap allocations. TinyGo implements simple GC and manages its memory by itself, contrary to specification. So it can't work out of the box on systems where the Host wants to manage its memory.
 
 **Linker globals**
-* The Runtime is expected to expose `__heap_base` global [1](https://github.com/tinygo-org/tinygo/issues/2045), but TinyGo doesn't support that out of the box.
+* The Runtime is expected to expose `__heap_base` global [[1]](https://github.com/tinygo-org/tinygo/issues/2045), but TinyGo doesn't support that out of the box.
 
 **Developer experience**
 * Implementing Wasm functionality makes you go pretty low-level and use some "unsafe" language constructs.
