@@ -491,15 +491,18 @@ TinyGo + extalloc GC
   }
 ```
 
-* Compare:
+* Comparisons
 
-*Core_version (empty APIs) from Substrate*
-"\x10node8substrate-node\n\x00\x00\x00\f\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x01"
+    * Core_version (empty APIs) from Substrate
 
-*Core_version (empty APIs) from Gosemble + conservative GC*
-"\x10node8substrate-node\n\x00\x00\x00\f\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x01\x00\x00\x00"
+`\x10node8substrate-node\n\x00\x00\x00\f\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x01`
 
-*Core_version (empty APIs) from Gosemble + extalloc GC*
+    * Core_version (empty APIs) from Gosemble + conservative GC
+
+`\x10node8substrate-node\n\x00\x00\x00\f\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x01\x00\x00\x00`
+
+    * Core_version (empty APIs) from Gosemble + extalloc GC
+
 "\x10node8substrate-node\n\x00\x00\x00\f\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x01\x00\x00\x00"
 
 
@@ -542,13 +545,13 @@ make test
 
 **Optional steps**
 
-* Inspecing the WASM Runtime - [wasmer](https://wasmer.io/)
+* Inspect WASM Runtime - [wasmer](https://wasmer.io/)
 
 ```bash
 wasmer inspect build/runtime.wasm
 ```
 
-* Converting WASM from binary to text format* - [wasm2wat](https://command-not-found.com/wasm2wat)
+* Convert WASM from binary to text format - [wasm2wat](https://command-not-found.com/wasm2wat)
 
 ```bash
 wasm2wat build/runtime.wasm -o build/runtime.wat
