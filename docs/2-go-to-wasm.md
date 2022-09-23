@@ -270,9 +270,10 @@ The algorithm is decomposed into several phases.
      
   This phase turns on the *write barrier*, which makes sure that all concurrent activity is completely safe.
 This will stop every goroutine from running.
+
   2. Marking (concurrent)
   
-    The goal of this phase is marking values in heap memory that are still in-use.
+    The goal of this phase is to mark values in heap memory that are still in-use.
 The collector inspects all stacks to find root pointers to heap memory and traverses the heap graph based on them.
 If the collector sees that it might run out of memory, *Mark Assist* is triggered, which slows down allocations to speed up calculations.
 
