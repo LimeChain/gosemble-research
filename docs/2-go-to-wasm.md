@@ -442,9 +442,9 @@ Taking into consideration all the technical challenges, the timeframe, and the n
   * [ ] the `_start` export func should be called somewhere to init the heap (the host does not support that).
   * [ ] better abstractions, the extalloc GC depends on third party allocation API that might change in the future.
 
-We have forked TinyGo and have created the following pull requests, which include all of the completed steps above:
-* Polkawasm target, using TinyGo's `gc_conservative` garbage collector, found [here](https://github.com/LimeChain/tinygo/pull/1)
-* An extended version of the polkawasm target, which uses an `extalloc` garbage collector, which uses the Host imported allocator functions (`ext_allocator_malloc_version_1`, `ext_allocator_free_version_1`), found [here](https://github.com/LimeChain/tinygo/pull/2/)
+We have forked TinyGo and have created the following pull requests, which include all the completed steps above:
+* [Polkawasm target](https://github.com/LimeChain/tinygo/pull/1), using TinyGo's `gc_conservative` garbage collector.
+* An [extended version](https://github.com/LimeChain/tinygo/pull/2/) of `polkawasm` target, which uses an `extalloc` garbage collector, which uses the Host imported allocator functions (`ext_allocator_malloc_version_1`, `ext_allocator_free_version_1`).
 
 **Setup Polkadot Host**
 1. [x] Fork and add [gossamer](https://github.com/LimeChain/gossamer) as a submodule.
@@ -453,10 +453,10 @@ We have forked TinyGo and have created the following pull requests, which includ
 
 **Implement Polkadot Runtime**
 1. [x] Implement SCALE codec without reflection.
-2. Implement the minimal Runtime API (core API).
-  * [x] `Core_version`
-  * [ ] `Core_execute_block`
-  * [ ] `Core_initialize_block`
+2. [ ] Implement the minimal Runtime API (core API).
+   * [x] `Core_version`
+   * [ ] `Core_execute_block`
+   * [ ] `Core_initialize_block`
 3. [x] Add Makefile steps
 
 **Future toolchain improvements**
