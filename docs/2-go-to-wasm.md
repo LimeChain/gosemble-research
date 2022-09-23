@@ -123,7 +123,7 @@ For example, let's examine the Host function that returns a given storage value.
 However, this is not the only possible solution, as there is an ongoing discussion about moving the allocator into the Wasm: [[1]](https://github.com/paritytech/substrate/issues/11883).
 Notably, the allocator maintains some of its data structures inside the linear memory and some other structures outside.
 
-#### 2.1.8. Concurrency requirments
+#### 2.1.8. Concurrency requirements
 
 The Runtime executes in serial, the parallelism is accomplished through a network of parallel running chains (Parachains). It is primarily because creating a semantic for deterministic parallel executing is really difficult in general.
 
@@ -192,9 +192,7 @@ Implements GC, scheduler included in every Go program. Contains a lot of type in
 
 #### 2.4.2.1. Memory Management
 
-Process
-* does not have direct access to the physical memory
-* virtual memory abstracts the access to the physical memory (via segmentation and page tables)
+Memory Management uses virtual memory that abstracts the access to the to physical memory.
 
 Process Memory Layout
 ```
@@ -224,10 +222,17 @@ Process Memory Layout
 
 **Heap**
 * allocated by the memory allocator and collected by the garbage collector
-* it is not an entity and there is no linear containment of memory that defines the Heap
+* it is not an entity and there is no linear containment of memory that defines heap memory
 * any memory reserved for application use in the process space is available for heap memory allocation
 
-Go uses escape analysis and Garbage Collector. Allocator is tightly coupled with the Garbage Collector.
+The Go Compiler decides (via escape analysis) when a value should be allocated on heap memory.
+When it comes down to passing pointers (sharing down), typically it is allocated on the stack.
+On the other hand, returning pointers (sharing up), typically it is allocated on heap memory.
+Allocations on heap memory also occur when value is:
+* returned as a result of a function execution and is referenced
+* too large to find on the stack
+* with unknown size at compile time and the compiler does not know what to do with it
+
 ```
    Mutator (Process)
       |
@@ -240,7 +245,7 @@ Go uses escape analysis and Garbage Collector. Allocator is tightly coupled with
       |
  _____▼____
 |          | 
-|   Heap   | ◄------ Collector
+|   Heap   | ◄------ Garbage Collector
 |__________|
 ```
 
@@ -249,56 +254,42 @@ Go uses escape analysis and Garbage Collector. Allocator is tightly coupled with
 * deals with fragmentation (merge smaller block to allow allocation of larger ones)
 
 **Garbage Collector**
-* tracking memory allocations in heap memory
-* releasing allocations that are no longer needed
-* keeping allocations that are still in use
+Garbage collectors are responsible for tracking memory allocations in heap memory, keeping those allocations that are still in-use, and releasing allocations when they are no longer needed.
+Go uses a concurrent mark-and-sweep algorithm that uses a write barrier for its garbage collector, running concurrently with mutator threads and allows multiple GC threads to run in parallel.
+The algorithm is decomposed into several phases.
 
-* tracing garbage collector (not reference counting)
-* hybrid stop-the-world/concurrent collector (stop-the-world part limited by a 10ms deadline)
-* CPU cores dedicated to running the concurrent collector
-* tri-color mark-and-sweep algorithm
+*Collection Phases*
+There are three collection phases of the garbage collector.
 
-* non-generational
-* non-compacting
-* fully precise
-* incurs a small cost if the program is moving pointers around
-* lower latency, but most likely also lower throughput
+*Stop/Start The World (STW)* - whenever STW phase is found, application business logic is not executed.
 
-*collection*
-1. Mark Setup (stop the world)
-    * turn on write barrier
-    * stop all goroutines
+1. Mark Setup (STW)
+
+This phase turns on the *write barrier*, which makes sure that all concurrent activity is completely safe.
+This will stop every goroutine from running.
 
 2. Marking (concurrent)
-    * inspect the stack to find root pointers to the heap
-    * traverse the heap graph from those root pointers
-    * mark values on the heap that are still in use
-    * slow down allocations to speed up collection
 
-3. Mark Termination (stop the world)
-    * turn the write barrier off
-    * various cleanup tasks
-    * next collection goal is calculated
+The goal of this phase is marking values in heap memory that are still in-use.
+The collector inspects all stacks to find root pointers to heap memory and traverses the heap graph based on them.
+If the collector sees that it might run out of memory, *Mark Assist* is triggered, which slows down allocations to speed up calculations.
 
-*sweeping*
-Freeing Heap Memory
-* occurs when the *goroutines* attempt to allocate new heap memory
-* the latency of sweeping is added to the cost of performing new allocation
+3. Mark Termination (STW)
+This phase turns off the write barrier, and executes various cleanup tasks (e.g. flushing mcaches).
 
-Compiler decides (via escape analysis) when a value should be allocated on the Heap
-* sharing down (passing pointers) typically stays on the Stack
-* sharing up (returning pointers) typically escapes on the Heap
+*Concurrent sweep*
+The sweep phase runs concurrently with normal execution. The heap is swept span-by-span both when a *goroutine* needs another span and concurrently in a background *goroutine*.
+In order to not request additional OS memory while there are unswept spans, when goroutine needs another span, it first tries to reclaim that much memory by sweeping.
+The cost of the sweeping is not on the GC, but on the new allocation itself.
 
-* when the value could be referenced after the function that constructed it returns
-* if the value is too large to fit on the stack
-* when the compiler doesn't know the size of the value at compile time
+*GC rate*
+The next GC is after an allocation of an extra amount of memory, proportional to the amount already in use.
+Go has a environment variable called `GOGC` (GC rate), which represents a ratio of how much new heap memory can be allocated before the next collection has to start.
+Adjusting `GOGC` changes the linear constant and the amount of extra memory used.
 
 #### 2.4.2.2. Concurrency
-
-The scheduler runs *goroutines*, pauses and resumes them on blocking channel ops. or mutex ops, coordinates blocking system calls, io, runtime GC. *Goroutines* use space threads, managed by the runtime.
-
-#### 2.4.2.3. Parallelism
-
+TODO:
+The scheduler runs *goroutines*, by pausing and resuming them depending on blocking channel or mutex operations, coordinates blocking system calls, io, runtime GC. *Goroutines* use space threads, managed by the runtime.
 
 ## 2.5. TinyGo
 
@@ -443,6 +434,10 @@ Taking into consideration all the technical challenges, the timeframe, and the n
   * [ ] the `_start` export func should be called somewhere to init the heap (the host does not support that).
   * [ ] better abstractions, the extalloc GC depends on third party allocation API that might change in the future.
 
+We have forked TinyGo and have created the following pull requests, which include all of the completed steps above:
+* Polkawasm target, using TinyGo's `gc_conservative` garbage collector, found [here](https://github.com/LimeChain/tinygo/pull/1)
+* An extended version of the polkawasm target, which uses an `extalloc` garbage collector, which uses the Host imported allocator functions (`ext_allocator_malloc_version_1`, `ext_allocator_free_version_1`), found [here](https://github.com/LimeChain/tinygo/pull/2/)
+
 **Setup Polkadot Host**
 1. [x] Fork and add [gossamer](https://github.com/LimeChain/gossamer) as a submodule.
 2. [x] Make the necessary changes to run locally provided Runtime inside the Host.
@@ -556,7 +551,7 @@ cat build/runtime.wat
 ## 4. Conclusion
 
 The resulting proof of concept could be used to develop Polkadot Runtimes.
-Also, current research document is useful for providing context as a starting point to make further contributions to the project or to take new direction for implementation of alternative toolchain.
+Also, the current research document is useful for providing context as a starting point to make further contributions to the project or to take new direction for implementation of alternative toolchain.
 
 
 ## 5. Discussion
