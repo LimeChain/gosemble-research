@@ -264,7 +264,8 @@ The algorithm is decomposed into several phases.
   * *Collection Phases*
 
     There are three collection phases of the garbage collector.
-   *Stop/Start The World (STW)* - whenever STW phase is found, application business logic is not executed.
+   
+    *Stop/Start The World (STW)* - whenever STW phase is found, application business logic is not executed.
 
     1. Mark Setup (STW)
      
