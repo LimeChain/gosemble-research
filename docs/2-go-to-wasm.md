@@ -194,7 +194,8 @@ Implements GC, scheduler included in every Go program. Contains a lot of type in
 
 Memory Management uses virtual memory that abstracts the access to the to physical memory.
 
-Process Memory Layout
+* Process Memory Layout
+
 ```
  ______________________
 |        STACK         | Function Stack Frames
@@ -215,15 +216,15 @@ Process Memory Layout
 |______________________|
 ```
 
-**Stack**
-* managed by the compiler
-* elastic
-* one stack per *goroutine*
+* **Stack**
+    * managed by the compiler
+    * elastic
+    * one stack per *goroutine*
 
-**Heap**
-* allocated by the memory allocator and collected by the garbage collector
-* it is not an entity and there is no linear containment of memory that defines heap memory
-* any memory reserved for application use in the process space is available for heap memory allocation
+* **Heap**
+    * allocated by the memory allocator and collected by the garbage collector
+    * it is not an entity and there is no linear containment of memory that defines heap memory
+    * any memory reserved for application use in the process space is available for heap memory allocation
 
 The Go Compiler decides (via escape analysis) when a value should be allocated on heap memory.
 When it comes down to passing pointers (sharing down), typically it is allocated on the stack.
@@ -249,45 +250,47 @@ Allocations on heap memory also occur when value is:
 |__________|
 ```
 
-**Allocator**
-* allocate new blocks with the correct size
-* deals with fragmentation (merge smaller block to allow allocation of larger ones)
+* **Allocator**
+    * allocate new blocks with the correct size
+    * deals with fragmentation (merge smaller block to allow allocation of larger ones)
 
-**Garbage Collector**
+* **Garbage Collector**
+
 Garbage collectors are responsible for tracking memory allocations in heap memory, keeping those allocations that are still in-use, and releasing allocations when they are no longer needed.
-Go uses a concurrent mark-and-sweep algorithm that uses a write barrier for its garbage collector, running concurrently with mutator threads and allows multiple GC threads to run in parallel.
+Go uses a concurrent mark-and-sweep algorithm with a write barrier for its garbage collector, running concurrently with mutator threads and allowing multiple GC threads to run in parallel.
 The algorithm is decomposed into several phases.
 
-*Collection Phases*
+    * *Collection Phases*
 There are three collection phases of the garbage collector.
 
 *Stop/Start The World (STW)* - whenever STW phase is found, application business logic is not executed.
 
-1. Mark Setup (STW)
+        1. Mark Setup (STW)
 
 This phase turns on the *write barrier*, which makes sure that all concurrent activity is completely safe.
 This will stop every goroutine from running.
 
-2. Marking (concurrent)
+        2. Marking (concurrent)
 
 The goal of this phase is marking values in heap memory that are still in-use.
 The collector inspects all stacks to find root pointers to heap memory and traverses the heap graph based on them.
 If the collector sees that it might run out of memory, *Mark Assist* is triggered, which slows down allocations to speed up calculations.
 
-3. Mark Termination (STW)
+        3. Mark Termination (STW)
 This phase turns off the write barrier, and executes various cleanup tasks (e.g. flushing mcaches).
 
-*Concurrent sweep*
+    *Concurrent sweep*
 The sweep phase runs concurrently with normal execution. The heap is swept span-by-span both when a *goroutine* needs another span and concurrently in a background *goroutine*.
 In order to not request additional OS memory while there are unswept spans, when goroutine needs another span, it first tries to reclaim that much memory by sweeping.
 The cost of the sweeping is not on the GC, but on the new allocation itself.
 
-*GC rate*
+    *GC rate*
 The next GC is after an allocation of an extra amount of memory, proportional to the amount already in use.
 Go has a environment variable called `GOGC` (GC rate), which represents a ratio of how much new heap memory can be allocated before the next collection has to start.
 Adjusting `GOGC` changes the linear constant and the amount of extra memory used.
 
 #### 2.4.2.2. Concurrency
+
 TODO:
 The scheduler runs *goroutines*, by pausing and resuming them depending on blocking channel or mutex operations, coordinates blocking system calls, io, runtime GC. *Goroutines* use space threads, managed by the runtime.
 
