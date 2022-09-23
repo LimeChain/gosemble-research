@@ -164,6 +164,7 @@ WebAssembly is low level bytecode instruction format for typed stack-based virtu
 
 The default compiler is `gc`. There are also `gccgo` which uses the GCC back-end and `gollvm` which uses the LLVM infrastructure (somewhat less mature).
 
+**Pipeline (Lowering)**
 ```
 // Frontend Compiler (lexing, parsing, typechecking)
 
@@ -227,10 +228,10 @@ Memory Management uses virtual memory that abstracts the access to the to physic
     * any memory reserved for application use in the process space is available for heap memory allocation
 
 The Go Compiler decides (via escape analysis) when a value should be allocated on heap memory.
-When it comes down to passing pointers (sharing down), typically it is allocated on the stack.
-On the other hand, returning pointers (sharing up), typically it is allocated on heap memory.
+When it comes down to passing pointers (sharing down) typically allocate on the stack.
+On the other hand, returning pointers (sharing up) typically allocate on heap memory.
 
-Allocations on heap memory also occur when value is:
+Allocations on heap memory also occur when the value is
 * returned as a result of a function execution and is referenced
 * too large to find on the stack
 * with unknown size at compile time and the compiler does not know what to do with it
