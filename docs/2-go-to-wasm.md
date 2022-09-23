@@ -117,7 +117,7 @@ Imported memory works a little better than exported memory since it avoids some 
 
 #### 2.1.7. External memory management
 
-The design in which allocation functions are on the Host side is dictated by the fact that some of the Host functions might return buffers of data of unknown size. That means that the Wasm code cannot efficiently provide buffers upfront.
+The design in which allocation functions are on the Host side is dictated by the fact that some Host functions might return buffers of data of unknown size. That means that the Wasm code cannot efficiently provide buffers upfront.
 
 For example, let's examine the Host function that returns a given storage value. The storage value's size is not known upfront in the general case, so the Wasm caller cannot pre-allocate the buffer upfront. A potential solution is to first call the Host function without a buffer, which will return the value's size, and then do the second call passing a buffer of the required size. For some Host functions, caches could be put in place for mitigation, some other functions cannot be implemented in such model at all. To solve this problem, it was chosen to place the allocator on the Host side.
 However, this is not the only possible solution, as there is an ongoing discussion about moving the allocator into the Wasm: [[1]](https://github.com/paritytech/substrate/issues/11883).
@@ -131,16 +131,16 @@ The Runtime executes in serial, the parallelism is accomplished through a networ
 ## 2.2. Translating Go's language capabilities to WebAssembly MVP
 
 It is important to see how well the language features of Go translate to WebAssembly, it's limitations and upcoming proposals that might help to overcome them. More specifically, the capabilities offered by WebAssembly MVP, targeted by Polkadot.
-WebAssembly is low level bytecode instruction format for typed stack-based virtual machine, that uses little-endian byte order when translating between values and bytes. Incorporates harvard architecture - the program state is separate from the instructions, with implicit stack that can't be accessed, only the untrusted memory. It has single, contiguous, byte-addressable default linear memory, accessed by all memory operators, spanning from offset 0 and extending up to a varying memory size. It can either be imported or defined internally inside the module, but eiither way, after import or definition, there is no difference when accessing it.
+WebAssembly is low level bytecode instruction format for typed stack-based virtual machine, that uses little-endian byte order when translating between values and bytes. Incorporates harvard architecture - the program state is separate from the instructions, with implicit stack that can't be accessed, only the untrusted memory. It has single, contiguous, byte-addressable default linear memory, accessed by all memory operators, spanning from offset 0 and extending up to a varying memory size. It can either be imported or defined internally inside the module, but either way, after import or definition, there is no difference when accessing it.
 
 ### 2.2.1. Limitations
 
-* the linear memory is great for languages with manual, reference counting or ownership memory model, but GC-managed memory requires a bit more work to port it. Since WebAssembly has no stack introspection to scan the roots on the stack, it requires to use mirrored shadow stack in the linear memory, pushed/poped along with the machine stack, which makes it less efficient.
+* the linear memory is great for languages with manual, reference counting or ownership memory model, but GC-managed memory requires a bit more work to port it. Since WebAssembly has no stack introspection to scan the roots on the stack, it requires to use mirrored shadow stack in the linear memory, pushed/popped along with the machine stack, which makes it less efficient.
 * the linear memory can be resized, but only upward (`grow_memory`, `memory.grow`).
 
 ### 2.2.2. Proposals
 
-* [GC proposal](https://github.com/WebAssembly/gc/blob/main/proposals/gc/Overview.md) might be handy to support an automatic memory management, but there are concerns how performant would be [[1]](https://github.com/WebAssembly/gc/issues/59), [[2]](https://github.com/WebAssembly/gc/issues/36). In addition to that, the Polkadot Runtime supports only WebAssembly MVP currently, also the GC proposal is under development, and it is not yet clear if Polkadot will be able to leverage the GC proposal. Potential problems include determinism (is there anything in GC that causes ND? Can it be tamed efficiently?) and safety (Is it possible for a host to limit the resource consumption reliably and deterministically?).
+* [GC proposal](https://github.com/WebAssembly/gc/blob/main/proposals/gc/Overview.md) might be handy to support an automatic memory management, but there are concerns how performant it will be [[1]](https://github.com/WebAssembly/gc/issues/59), [[2]](https://github.com/WebAssembly/gc/issues/36). In addition to that, the Polkadot Runtime supports only WebAssembly MVP currently, also the GC proposal is under development, and it is not yet clear if Polkadot will be able to leverage the GC proposal. Potential problems include determinism (is there anything in GC that causes ND? Can it be tamed efficiently?) and safety (Is it possible for a host to limit the resource consumption reliably and deterministically?).
 * allow setting protection and creating mappings within the contiguous linear memory.
 * there are only default linear memories, but new memory operators may be added after the MVP which can also access non-default memories.
 
@@ -161,7 +161,7 @@ WebAssembly is low level bytecode instruction format for typed stack-based virtu
 
 ### 2.4.1. Compiler
 
-The default compiler is `gc`. There are also `gccgo` which uses the GCC back-end and `gollvm` which uses the LLVM infrastructure (somewhat less mature).
+The default compiler is `gc`. There are also `gccgo`, which uses the GCC back-end, and `gollvm` which uses the LLVM infrastructure (somewhat less mature).
 
 **Pipeline (Lowering)**
 ```
@@ -227,10 +227,10 @@ Memory Management uses virtual memory that abstracts the access to the physical 
     * any memory reserved for application use in the process space is available for heap memory allocation
 
 The Go Compiler decides (via escape analysis) when a value should be allocated on heap memory.
-When it comes down to passing pointers (sharing down) typically allocate on the stack.
-On the other hand, returning pointers (sharing up) typically allocate on heap memory.
+When it comes down to passing pointers (sharing down), typically allocations are on the stack.
+On the other hand, returning pointers (sharing up) typically allocate are on heap memory.
 
-Allocations on heap memory also occur when the value is
+Allocations on heap memory also occur when the value is:
 * returned as a result of a function execution and is referenced
 * too large to find on the stack
 * with unknown size at compile time and the compiler does not know what to do with it
@@ -258,8 +258,8 @@ Allocations on heap memory also occur when the value is
 * **Garbage Collector**
 
     Garbage collectors are responsible for tracking memory allocations in heap memory, keeping those allocations that are still in-use, and releasing allocations when they are no longer needed.
-Go uses a concurrent mark-and-sweep algorithm with a write-barrier for its garbage collector, running concurrently with mutator threads and allowing multiple GC threads to run in parallel.
-The algorithm is decomposed into several phases.
+
+    Go uses a concurrent mark-and-sweep algorithm with a write-barrier for its garbage collector, running concurrently with mutator threads and allowing multiple GC threads to run in parallel. The algorithm is decomposed into several phases.
 
   * *Collection Phases*
 
@@ -269,14 +269,11 @@ The algorithm is decomposed into several phases.
 
     1. Mark Setup (STW)
      
-       This phase turns on the *write barrier*, which makes sure that all concurrent activity is completely safe.
-This will stop every goroutine from running.
+       This phase turns on the *write barrier*, which makes sure that all concurrent activity is completely safe. This will stop every goroutine from running.
 
     2. Marking (concurrent)
   
-       The goal of this phase is to mark values in heap memory that are still in-use.
-The collector inspects all stacks to find root pointers to heap memory and traverses the heap graph based on them.
-If the collector sees that it might run out of memory, *Mark Assist* is triggered, which slows down allocations to speed up calculations.
+       The goal of this phase is to mark values in heap memory that are still in-use. The collector inspects all stacks to find root pointers to heap memory and traverses the heap graph based on them. If the collector sees that it might run out of memory, *Mark Assist* is triggered, which slows down allocations to speed up calculations.
 
     3. Mark Termination (STW)
 
@@ -284,7 +281,7 @@ If the collector sees that it might run out of memory, *Mark Assist* is triggere
 
   * *Concurrent sweep*
 
-      The sweep phase runs concurrently with normal execution. The heap is swept span-by-span both when a *goroutine* needs another span and concurrently in a background *goroutine*.
+      The sweep phase runs concurrently with normal execution. The heap is swept span-by-span both when a *goroutine* needs another span and concurrently in a background *goroutine*. 
   In order to not request additional OS memory while there are unswept spans, when goroutine needs another span, it first tries to reclaim that much memory by sweeping.
   The cost of the sweeping is not on the GC, but on the new allocation itself.
 
@@ -342,7 +339,7 @@ OBJECT FILE -> link (llvm) -> EXECUTABLE
 
 * root: contains the command line interface for the tinygo command and all its subcommands
 * builder: orchestrates the build
-* loader: loads and typechecks the code, and produces an AST
+* loader: loads and type-checks the code, and produces an AST
 * compiler: the compiler itself, makes little attempt at optimizing code
 * interp: tries to run package initializers at compile time as far as possible
 * transform: implements various optimizations necessary to produce working and efficient code
