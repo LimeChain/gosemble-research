@@ -266,20 +266,20 @@ The algorithm is decomposed into several phases.
     There are three collection phases of the garbage collector.
    *Stop/Start The World (STW)* - whenever STW phase is found, application business logic is not executed.
 
-  1. Mark Setup (STW)
+    1. Mark Setup (STW)
      
-  This phase turns on the *write barrier*, which makes sure that all concurrent activity is completely safe.
+       This phase turns on the *write barrier*, which makes sure that all concurrent activity is completely safe.
 This will stop every goroutine from running.
 
-  2. Marking (concurrent)
+    2. Marking (concurrent)
   
-    The goal of this phase is to mark values in heap memory that are still in-use.
+       The goal of this phase is to mark values in heap memory that are still in-use.
 The collector inspects all stacks to find root pointers to heap memory and traverses the heap graph based on them.
 If the collector sees that it might run out of memory, *Mark Assist* is triggered, which slows down allocations to speed up calculations.
 
-  3. Mark Termination (STW)
+    3. Mark Termination (STW)
 
-  This phase turns off the write barrier, and executes various cleanup tasks (e.g. flushing mcaches).
+       This phase turns off the write barrier, and executes various cleanup tasks (e.g. flushing mcaches).
 
   * *Concurrent sweep*
 
@@ -289,7 +289,7 @@ If the collector sees that it might run out of memory, *Mark Assist* is triggere
 
   * *GC rate*
   
-  The next GC is after an allocation of an extra amount of memory, proportional to the amount already in use.
+     The next GC is after an allocation of an extra amount of memory, proportional to the amount already in use.
   Go has a environment variable called `GOGC` (GC rate), which represents a ratio of how much new heap memory can be allocated before the next collection has to start.
   Adjusting `GOGC` changes the linear constant and the amount of extra memory used.
 
