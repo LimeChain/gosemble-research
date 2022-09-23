@@ -229,6 +229,7 @@ Memory Management uses virtual memory that abstracts the access to the to physic
 The Go Compiler decides (via escape analysis) when a value should be allocated on heap memory.
 When it comes down to passing pointers (sharing down), typically it is allocated on the stack.
 On the other hand, returning pointers (sharing up), typically it is allocated on heap memory.
+
 Allocations on heap memory also occur when value is:
 * returned as a result of a function execution and is referenced
 * too large to find on the stack
@@ -256,38 +257,40 @@ Allocations on heap memory also occur when value is:
 
 * **Garbage Collector**
 
-Garbage collectors are responsible for tracking memory allocations in heap memory, keeping those allocations that are still in-use, and releasing allocations when they are no longer needed.
+    Garbage collectors are responsible for tracking memory allocations in heap memory, keeping those allocations that are still in-use, and releasing allocations when they are no longer needed.
 Go uses a concurrent mark-and-sweep algorithm with a write barrier for its garbage collector, running concurrently with mutator threads and allowing multiple GC threads to run in parallel.
 The algorithm is decomposed into several phases.
 
-    * *Collection Phases*
-There are three collection phases of the garbage collector.
+  * *Collection Phases*
 
-*Stop/Start The World (STW)* - whenever STW phase is found, application business logic is not executed.
+    There are three collection phases of the garbage collector.
+   *Stop/Start The World (STW)* - whenever STW phase is found, application business logic is not executed.
 
-        1. Mark Setup (STW)
-
-This phase turns on the *write barrier*, which makes sure that all concurrent activity is completely safe.
+  1. Mark Setup (STW)
+     
+  This phase turns on the *write barrier*, which makes sure that all concurrent activity is completely safe.
 This will stop every goroutine from running.
-
-        2. Marking (concurrent)
-
-The goal of this phase is marking values in heap memory that are still in-use.
+  2. Marking (concurrent)
+  
+    The goal of this phase is marking values in heap memory that are still in-use.
 The collector inspects all stacks to find root pointers to heap memory and traverses the heap graph based on them.
 If the collector sees that it might run out of memory, *Mark Assist* is triggered, which slows down allocations to speed up calculations.
 
-        3. Mark Termination (STW)
-This phase turns off the write barrier, and executes various cleanup tasks (e.g. flushing mcaches).
+  3. Mark Termination (STW)
 
-    *Concurrent sweep*
-The sweep phase runs concurrently with normal execution. The heap is swept span-by-span both when a *goroutine* needs another span and concurrently in a background *goroutine*.
-In order to not request additional OS memory while there are unswept spans, when goroutine needs another span, it first tries to reclaim that much memory by sweeping.
-The cost of the sweeping is not on the GC, but on the new allocation itself.
+  This phase turns off the write barrier, and executes various cleanup tasks (e.g. flushing mcaches).
 
-    *GC rate*
-The next GC is after an allocation of an extra amount of memory, proportional to the amount already in use.
-Go has a environment variable called `GOGC` (GC rate), which represents a ratio of how much new heap memory can be allocated before the next collection has to start.
-Adjusting `GOGC` changes the linear constant and the amount of extra memory used.
+  * *Concurrent sweep*
+
+      The sweep phase runs concurrently with normal execution. The heap is swept span-by-span both when a *goroutine* needs another span and concurrently in a background *goroutine*.
+  In order to not request additional OS memory while there are unswept spans, when goroutine needs another span, it first tries to reclaim that much memory by sweeping.
+  The cost of the sweeping is not on the GC, but on the new allocation itself.
+
+  * *GC rate*
+  
+  The next GC is after an allocation of an extra amount of memory, proportional to the amount already in use.
+  Go has a environment variable called `GOGC` (GC rate), which represents a ratio of how much new heap memory can be allocated before the next collection has to start.
+  Adjusting `GOGC` changes the linear constant and the amount of extra memory used.
 
 #### 2.4.2.2. Concurrency
 
