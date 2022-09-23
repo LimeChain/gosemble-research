@@ -216,24 +216,20 @@ Memory Management uses virtual memory that abstracts the access to the physical 
 |______________________|
 ```
 
-* **Stack**
-    * managed by the compiler
-    * elastic
-    * one stack per *goroutine*
+The Go Compiler decides (via escape analysis) when a value should be allocated on heap memory. The objects in the heap
+are allocated by memory allocators and collected by garbage collectors.
 
-* **Heap**
-    * allocated by the memory allocator and collected by the garbage collector
-    * it is not an entity and there is no linear containment of memory that defines heap memory
-    * any memory reserved for application use in the process space is available for heap memory allocation
-
-The Go Compiler decides (via escape analysis) when a value should be allocated on heap memory.
+Most of the function arguments, return values, and local variables of function calls are allocated on the stack, which is managed by the compiler.
 When it comes down to passing pointers (sharing down), typically allocations are on the stack.
-On the other hand, returning pointers (sharing up) typically allocate are on heap memory.
+On the other hand, returning pointers (sharing up) typically allocate on heap memory.
 
 Allocations on heap memory also occur when the value is:
 * returned as a result of a function execution and is referenced
 * too large to find on the stack
 * with unknown size at compile time and the compiler does not know what to do with it
+
+Memory management generally consists of three components - program, allocator and collector.
+Whenever the program requests memory, it requests it through the memory allocator, which initialises the corresponding memory to the heap. 
 
 ```
    Mutator (Process)
@@ -252,8 +248,9 @@ Allocations on heap memory also occur when the value is:
 ```
 
 * **Allocator**
-    * allocate new blocks with the correct size
-    * deals with fragmentation (merge smaller block to allow allocation of larger ones)
+    
+    The Go runtime memory allocator is based on thread-caching malloc (TCMalloc) allocation strategy that classifies objects according to their size,
+including multi-level caching to improve its performance.
 
 * **Garbage Collector**
 
