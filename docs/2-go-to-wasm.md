@@ -1,6 +1,6 @@
 # Research Feasibility of a Go Runtime - Aug 2022
 
-- [0. Abstract](#abstract)
+- [0. Abstract](#0-abstract)
 - [1. Introduction](#1-introduction)
 - [2. Background](#2-background)
     * [2.1. The design decisions behind Polkadot's architecture](#21-the-design-decisions-behind-polkadots-architecture)
