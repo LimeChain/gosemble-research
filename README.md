@@ -4,7 +4,7 @@ The following repository contains research and PoC on toolchains for building Go
 The research is funded by [**Web3 Foundation**](https://web3.foundation) **Grants** and developed, maintained by
 [**LimeChain**](https://limechain.tech).
 
-[Research Results](./docs/2-go-to-wasm.md)
+[Research Results](./docs/2-go-based-polkadot-runtime.md)
 
 ## PoC of a Polkadot Runtime in Go
 
