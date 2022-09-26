@@ -407,7 +407,7 @@ The high-level states of a *goroutine* are:
 multiple *goroutines* want time on an OS thread, which will automatically make *goroutines* wait longer to get time. This might lead to bad performance.
 * Waiting/Blocked - the *goroutine* waits due to a system call or synchronization calls (blocking channels, atomic or mutex operations).
 
-The Go scheduler implements is [cooperative](https://en.wikipedia.org/wiki/Cooperative_multitasking) scheduling, which depending on events makes
+The Go scheduler implements [cooperative](https://en.wikipedia.org/wiki/Cooperative_multitasking) scheduling, which depending on events makes
 scheduling decisions and does context-switching. Usually, you cannot predict what the Go scheduler is going to do. 
 
 There are four types of events in the Go program that might allow the scheduler to make a scheduling decision:
