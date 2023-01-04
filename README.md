@@ -6,6 +6,9 @@ The research is funded by [**Web3 Foundation**](https://web3.foundation) **Grant
 
 [Research Results](./docs/2-go-based-polkadot-runtime.md)
 
+[Next phase](https://github.com/LimeChain/gosemble) is the continuation of the effort to implement a Go-based framework for building Substrate compatible runtimes.
+
+
 ## PoC of a Polkadot Runtime in Go
 
 The steps below will showcase testing a PoC Polkadot Runtime implementation in Go.
